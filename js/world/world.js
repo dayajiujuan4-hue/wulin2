@@ -41,6 +41,10 @@ import {
   updateVendors
 } from "../people/vendors.js";
 
+import {
+  createBuildingSystem
+} from "../buildings/buildingSystem.js";
+
 
 let animatedObjects = [];
 
@@ -48,9 +52,16 @@ let crowdSystem = null;
 let vendorSystem = null;
 
 
+/* =====================================================
+   CREATE WORLD
+===================================================== */
+
 export function createWorld(scene) {
 
   const colliders = [];
+
+  const floorZones = [];
+
 
   createLighting(scene);
 
@@ -58,10 +69,27 @@ export function createWorld(scene) {
 
   createDistricts(scene);
 
+
+  /*
+    Existing background buildings
+  */
+
   createBuildings(
     scene,
     colliders
   );
+
+
+  /*
+    New explorable buildings
+  */
+
+  createBuildingSystem(
+    scene,
+    colliders,
+    floorZones
+  );
+
 
   createStalls(
     scene,
@@ -88,11 +116,19 @@ export function createWorld(scene) {
 
 
   return {
-    colliders
+
+    colliders,
+
+    floorZones
+
   };
 
 }
 
+
+/* =====================================================
+   UPDATE WORLD
+===================================================== */
 
 export function updateWorld(
   delta,
@@ -108,7 +144,7 @@ export function updateWorld(
 
 
   /*
-    NEON
+    Neon
   */
 
   for (
@@ -121,19 +157,26 @@ export function updateWorld(
       object.userData.base +
 
       Math.sin(
+
         time *
         object.userData.speed +
+
         object.userData.phase
-      ) * .25;
+
+      ) *
+
+      0.25;
 
   }
 
 
   /*
-    CROWD
+    Crowd
   */
 
-  if (crowdSystem) {
+  if (
+    crowdSystem
+  ) {
 
     updateCrowd(
       crowdSystem,
@@ -146,10 +189,12 @@ export function updateWorld(
 
 
   /*
-    VENDORS
+    Vendors
   */
 
-  if (vendorSystem) {
+  if (
+    vendorSystem
+  ) {
 
     updateVendors(
       vendorSystem,
