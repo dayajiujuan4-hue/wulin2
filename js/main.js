@@ -33,7 +33,7 @@ const scene =
 
 scene.background =
   new THREE.Color(
-    0x07101c
+    0x050a14
   );
 
 
@@ -50,16 +50,11 @@ scene.fog =
 
 const camera =
   new THREE.PerspectiveCamera(
-
-    68,
-
+    70,
     window.innerWidth /
     window.innerHeight,
-
-    0.1,
-
-    220
-
+    0.08,
+    240
   );
 
 
@@ -87,14 +82,14 @@ const post =
    WORLD
 ===================================================== */
 
-let world;
+let world = null;
 
-let player;
+let player = null;
 
 
 try {
 
-  setLoading(15);
+  setLoading(10);
 
 
   world =
@@ -103,23 +98,29 @@ try {
     );
 
 
-  setLoading(72);
+  setLoading(65);
 
 
   player =
     createPlayer(
-
       camera,
-
       renderer.domElement,
-
       world.colliders,
-
       world.floorZones,
-
       world.walkableObjects
-
     );
+
+
+  /*
+    IMPORTANT
+
+    Camera is inside the
+    player camera rig.
+  */
+
+  scene.add(
+    player.object
+  );
 
 
   setLoading(100);
@@ -134,7 +135,9 @@ try {
         );
 
 
-      if (loading) {
+      if (
+        loading
+      ) {
 
         loading.style.display =
           "none";
@@ -142,7 +145,6 @@ try {
       }
 
     },
-
     450
   );
 
@@ -152,7 +154,9 @@ catch (
   error
 ) {
 
-  console.error(error);
+  console.error(
+    error
+  );
 
   showError();
 
@@ -160,7 +164,7 @@ catch (
 
 
 /* =====================================================
-   START
+   POINTER LOCK
 ===================================================== */
 
 const startScreen =
@@ -175,33 +179,76 @@ const startButton =
   );
 
 
+function lockPointer() {
+
+  if (
+    document.pointerLockElement ===
+    renderer.domElement
+  ) {
+
+    return;
+
+  }
+
+
+  renderer.domElement
+    .requestPointerLock();
+
+}
+
+
 startButton.addEventListener(
   "click",
   () => {
 
-    renderer.domElement
-      .requestPointerLock();
-
-
-    startScreen.style.display =
-      "none";
+    lockPointer();
 
   }
 );
 
 
-/* =====================================================
-   POINTER LOCK
-===================================================== */
+/*
+  Also allow canvas click
+  to resume the game.
+*/
 
-document.addEventListener(
-  "pointerlockchange",
+renderer.domElement.addEventListener(
+  "click",
   () => {
 
     if (
       document.pointerLockElement !==
       renderer.domElement
     ) {
+
+      lockPointer();
+
+    }
+
+  }
+);
+
+
+document.addEventListener(
+  "pointerlockchange",
+  () => {
+
+    const locked =
+
+      document.pointerLockElement ===
+      renderer.domElement;
+
+
+    if (
+      locked
+    ) {
+
+      startScreen.style.display =
+        "none";
+
+    }
+
+    else {
 
       startScreen.style.display =
         "flex";
@@ -222,12 +269,25 @@ let currentArea =
 
 function detectArea() {
 
+  if (
+    !player
+  ) {
+
+    return;
+
+  }
+
+
+  const position =
+    player.getPosition();
+
+
   const x =
-    camera.position.x;
+    position.x;
 
 
   const z =
-    camera.position.z;
+    position.z;
 
 
   for (
@@ -236,13 +296,10 @@ function detectArea() {
   ) {
 
     if (
-
       x >= area.minX &&
       x <= area.maxX &&
-
       z >= area.minZ &&
       z <= area.maxZ
-
     ) {
 
       if (
@@ -260,7 +317,9 @@ function detectArea() {
           );
 
 
-        if (zone) {
+        if (
+          zone
+        ) {
 
           zone.textContent =
             area.name;
@@ -340,7 +399,6 @@ function showAreaPopup(
         );
 
       },
-
       2200
     );
 
@@ -408,11 +466,8 @@ function applyQuality(
   renderer.setPixelRatio(
 
     Math.min(
-
       window.devicePixelRatio,
-
       settings.pixelRatio
-
     )
 
   );
@@ -440,8 +495,7 @@ function applyQuality(
    FPS
 ===================================================== */
 
-let fpsFrames =
-  0;
+let fpsFrames = 0;
 
 let fpsTime =
   performance.now();
@@ -462,17 +516,14 @@ function updateFPS() {
 
 
   if (
-    elapsed >=
-    500
+    elapsed >= 500
   ) {
 
     const fps =
       Math.round(
-
         fpsFrames *
         1000 /
         elapsed
-
       );
 
 
@@ -482,7 +533,9 @@ function updateFPS() {
       );
 
 
-    if (element) {
+    if (
+      element
+    ) {
 
       element.textContent =
         `FPS ${fps}`;
@@ -532,21 +585,34 @@ window.addEventListener(
 
 
 /* =====================================================
-   ERROR
+   LOADING
 ===================================================== */
 
-window.addEventListener(
-  "error",
-  event => {
+function setLoading(
+  value
+) {
 
-    console.error(
-      event.error ||
-      event.message
+  const element =
+    document.getElementById(
+      "loadingPercent"
     );
 
-  }
-);
 
+  if (
+    element
+  ) {
+
+    element.textContent =
+      `${value}%`;
+
+  }
+
+}
+
+
+/* =====================================================
+   ERROR
+===================================================== */
 
 function showError() {
 
@@ -562,7 +628,9 @@ function showError() {
     );
 
 
-  if (loading) {
+  if (
+    loading
+  ) {
 
     loading.style.display =
       "none";
@@ -570,7 +638,9 @@ function showError() {
   }
 
 
-  if (error) {
+  if (
+    error
+  ) {
 
     error.style.display =
       "flex";
@@ -580,28 +650,17 @@ function showError() {
 }
 
 
-/* =====================================================
-   LOADING
-===================================================== */
+window.addEventListener(
+  "error",
+  event => {
 
-function setLoading(
-  value
-) {
-
-  const element =
-    document.getElementById(
-      "loadingPercent"
+    console.error(
+      event.error ||
+      event.message
     );
 
-
-  if (element) {
-
-    element.textContent =
-      `${value}%`;
-
   }
-
-}
+);
 
 
 /* =====================================================
@@ -630,7 +689,9 @@ function animate() {
     clock.elapsedTime;
 
 
-  if (player) {
+  if (
+    player
+  ) {
 
     player.update(
       delta
@@ -639,7 +700,9 @@ function animate() {
   }
 
 
-  if (world) {
+  if (
+    world
+  ) {
 
     updateWorld(
       delta,
@@ -654,16 +717,6 @@ function animate() {
 
   updateFPS();
 
-
-  /*
-    IMPORTANT
-
-    Do not call renderer.render()
-    anymore.
-
-    EffectComposer now renders
-    the scene.
-  */
 
   post.composer.render();
 
