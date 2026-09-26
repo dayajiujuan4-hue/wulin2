@@ -10,20 +10,28 @@ import {
   createApartment
 } from "./apartment.js";
 
+import {
+  createTeaShop
+} from "./teaShop.js";
 
-/* =====================================================
-   EXPLORABLE BUILDING SYSTEM
-===================================================== */
+import {
+  createConvenienceStore
+} from "./convenienceStore.js";
+
+import {
+  createRooftop
+} from "./rooftop.js";
+
+import {
+  createReflections
+} from "../effects/reflections.js";
+
 
 export function createBuildingSystem(
   scene,
   colliders,
   floorZones
 ) {
-
-  /*
-    Back alley restaurant
-  */
 
   createRestaurant(
     scene,
@@ -33,10 +41,6 @@ export function createBuildingSystem(
     -20
   );
 
-
-  /*
-    Creative shop
-  */
 
   createCreativeShop(
     scene,
@@ -48,7 +52,7 @@ export function createBuildingSystem(
 
 
   /*
-    Apartment with second floor
+    裏路地3階建て
   */
 
   createApartment(
@@ -57,6 +61,54 @@ export function createBuildingSystem(
     floorZones,
     34,
     -25
+  );
+
+
+  /*
+    奶茶店
+  */
+
+  createTeaShop(
+    scene,
+    colliders,
+    floorZones,
+    -14,
+    -72
+  );
+
+
+  /*
+    コンビニ風店舗
+  */
+
+  createConvenienceStore(
+    scene,
+    colliders,
+    floorZones,
+    14,
+    -43
+  );
+
+
+  /*
+    屋上設備
+  */
+
+  createRooftop(
+    scene,
+    colliders,
+    floorZones,
+    34,
+    -25
+  );
+
+
+  /*
+    ネオン反射
+  */
+
+  createReflections(
+    scene
   );
 
 }
