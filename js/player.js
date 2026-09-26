@@ -17,10 +17,6 @@ export function createPlayer(
   walkableObjects = []
 ) {
 
-  /* =====================================================
-     POINTER LOCK CONTROLS
-  ===================================================== */
-
   const controls =
     new PointerLockControls(
       camera,
@@ -28,24 +24,12 @@ export function createPlayer(
     );
 
 
-  /*
-    PointerLockControlsが
-    camera.rotationを管理する。
-
-    これ以降、自前でyaw/pitchを
-    cameraへ書き込まない。
-  */
-
   camera.position.set(
     0,
     CONFIG.player.height,
     22
   );
 
-
-  /* =====================================================
-     INPUT
-  ===================================================== */
 
   const keys = {};
 
@@ -72,11 +56,6 @@ export function createPlayer(
   );
 
 
-  /*
-    フォーカスを失ったとき
-    キー押しっぱなし状態を解除
-  */
-
   window.addEventListener(
     "blur",
     () => {
@@ -93,10 +72,6 @@ export function createPlayer(
     }
   );
 
-
-  /* =====================================================
-     FLOOR SYSTEM
-  ===================================================== */
 
   let currentFloorHeight =
     0;
@@ -124,8 +99,8 @@ export function createPlayer(
   ) {
 
     if (
-      !walkableObjects ||
-      walkableObjects.length === 0
+      walkableObjects.length ===
+      0
     ) {
 
       return null;
@@ -158,7 +133,8 @@ export function createPlayer(
 
 
     if (
-      hits.length === 0
+      hits.length ===
+      0
     ) {
 
       return null;
@@ -171,36 +147,31 @@ export function createPlayer(
   }
 
 
-  /* =====================================================
-     STAIR HEIGHT
-  ===================================================== */
-
   function getStairHeight(
     zone,
     x,
     z
   ) {
 
-    let progress = 0;
+    let progress;
 
 
     if (
-      zone.axis === "z"
+      zone.axis ===
+      "x"
     ) {
 
       progress =
 
         (
-          z -
-          zone.minZ
-        )
-
-        /
+          x -
+          zone.minX
+        ) /
 
         Math.max(
           0.001,
-          zone.maxZ -
-          zone.minZ
+          zone.maxX -
+          zone.minX
         );
 
     }
@@ -210,16 +181,14 @@ export function createPlayer(
       progress =
 
         (
-          x -
-          zone.minX
-        )
-
-        /
+          z -
+          zone.minZ
+        ) /
 
         Math.max(
           0.001,
-          zone.maxX -
-          zone.minX
+          zone.maxZ -
+          zone.minZ
         );
 
     }
@@ -234,36 +203,34 @@ export function createPlayer(
 
 
     return THREE.MathUtils.lerp(
+
       zone.startHeight,
+
       zone.endHeight,
+
       progress
+
     );
 
   }
 
-
-  /* =====================================================
-     FLOOR ZONES
-  ===================================================== */
 
   function getZoneFloor(
     x,
     z
   ) {
 
-    /*
-      階段を最優先
-  */
-
     for (
       const zone of floorZones
     ) {
 
       if (
+
         x < zone.minX ||
         x > zone.maxX ||
         z < zone.minZ ||
         z > zone.maxZ
+
       ) {
 
         continue;
@@ -272,7 +239,8 @@ export function createPlayer(
 
 
       if (
-        zone.type === "stairs"
+        zone.type ===
+        "stairs"
       ) {
 
         return getStairHeight(
@@ -286,10 +254,6 @@ export function createPlayer(
     }
 
 
-    /*
-      通常床
-  */
-
     let best =
       null;
 
@@ -299,10 +263,12 @@ export function createPlayer(
     ) {
 
       if (
+
         x < zone.minX ||
         x > zone.maxX ||
         z < zone.minZ ||
         z > zone.maxZ
+
       ) {
 
         continue;
@@ -320,15 +286,13 @@ export function createPlayer(
       }
 
 
-      const difference =
+      if (
+
         Math.abs(
           zone.height -
           currentFloorHeight
-        );
+        ) <= 1.05
 
-
-      if (
-        difference <= 1.05
       ) {
 
         if (
@@ -356,13 +320,6 @@ export function createPlayer(
     z
   ) {
 
-    /*
-      現在は階段Zoneを優先。
-
-      Raycaster移行途中なので、
-      これが一番安定する。
-  */
-
     const zoneFloor =
       getZoneFloor(
         x,
@@ -371,7 +328,8 @@ export function createPlayer(
 
 
     if (
-      zoneFloor !== null
+      zoneFloor !==
+      null
     ) {
 
       return zoneFloor;
@@ -387,19 +345,14 @@ export function createPlayer(
 
 
     if (
-      rayFloor !== null
+      rayFloor !== null &&
+      Math.abs(
+        rayFloor -
+        currentFloorHeight
+      ) <= 1.2
     ) {
 
-      if (
-        Math.abs(
-          rayFloor -
-          currentFloorHeight
-        ) <= 1.2
-      ) {
-
-        return rayFloor;
-
-      }
+      return rayFloor;
 
     }
 
@@ -408,10 +361,6 @@ export function createPlayer(
 
   }
 
-
-  /* =====================================================
-     COLLISION
-  ===================================================== */
 
   function collides(
     x,
@@ -423,22 +372,31 @@ export function createPlayer(
 
 
     for (
-      const collider of colliders
+      const collider of
+      colliders
     ) {
 
       const nearestX =
         THREE.MathUtils.clamp(
+
           x,
+
           collider.minX,
+
           collider.maxX
+
         );
 
 
       const nearestZ =
         THREE.MathUtils.clamp(
+
           z,
+
           collider.minZ,
+
           collider.maxZ
+
         );
 
 
@@ -453,10 +411,13 @@ export function createPlayer(
 
 
       if (
+
         dx * dx +
-        dz * dz
-        <
-        radius * radius
+        dz * dz <
+
+        radius *
+        radius
+
       ) {
 
         return true;
@@ -470,10 +431,6 @@ export function createPlayer(
 
   }
 
-
-  /* =====================================================
-     MOVEMENT VECTORS
-  ===================================================== */
 
   const forward =
     new THREE.Vector3();
@@ -491,30 +448,24 @@ export function createPlayer(
     0;
 
 
-  /* =====================================================
-     UPDATE
-  ===================================================== */
-
   function update(
     delta
   ) {
 
-    /*
-      PointerLockControlsが
-      視点を自動更新してくれるので、
-      ここではrotationを一切触らない。
-  */
+    let forwardInput =
+      0;
 
 
-    let forwardInput = 0;
-    let sideInput = 0;
+    let sideInput =
+      0;
 
 
     if (
       keys["KeyW"]
     ) {
 
-      forwardInput += 1;
+      forwardInput +=
+        1;
 
     }
 
@@ -523,7 +474,8 @@ export function createPlayer(
       keys["KeyS"]
     ) {
 
-      forwardInput -= 1;
+      forwardInput -=
+        1;
 
     }
 
@@ -532,7 +484,8 @@ export function createPlayer(
       keys["KeyD"]
     ) {
 
-      sideInput += 1;
+      sideInput +=
+        1;
 
     }
 
@@ -541,7 +494,8 @@ export function createPlayer(
       keys["KeyA"]
     ) {
 
-      sideInput -= 1;
+      sideInput -=
+        1;
 
     }
 
@@ -563,24 +517,17 @@ export function createPlayer(
       running
 
         ? CONFIG.player.runSpeed
+
         : CONFIG.player.speed;
 
-
-    /* =================================================
-       CAMERA DIRECTION
-    ================================================= */
 
     camera.getWorldDirection(
       forward
     );
 
 
-    /*
-      上下を見ると移動方向まで
-      上下しないようYを消す
-  */
-
-    forward.y = 0;
+    forward.y =
+      0;
 
 
     if (
@@ -636,10 +583,6 @@ export function createPlayer(
     );
 
 
-    /* =================================================
-       X COLLISION
-    ================================================= */
-
     const nextX =
 
       camera.position.x +
@@ -658,10 +601,6 @@ export function createPlayer(
 
     }
 
-
-    /* =================================================
-       Z COLLISION
-    ================================================= */
 
     const nextZ =
 
@@ -682,35 +621,30 @@ export function createPlayer(
     }
 
 
-    /* =================================================
-       FLOOR
-    ================================================= */
-
     const targetFloor =
       resolveFloor(
+
         camera.position.x,
+
         camera.position.z
+
       );
 
 
-    /*
-      階段はある程度素早く追従。
-  */
-
     currentFloorHeight =
       THREE.MathUtils.lerp(
+
         currentFloorHeight,
+
         targetFloor,
+
         Math.min(
           1,
           delta * 22
         )
+
       );
 
-
-    /* =================================================
-       HEAD BOB
-    ================================================= */
 
     let bob =
       0;
@@ -736,9 +670,7 @@ export function createPlayer(
 
         Math.sin(
           bobTime
-        )
-
-        *
+        ) *
 
         (
           running
@@ -752,15 +684,13 @@ export function createPlayer(
     camera.position.y =
 
       CONFIG.player.height +
+
       currentFloorHeight +
+
       bob;
 
   }
 
-
-  /* =====================================================
-     PUBLIC
-  ===================================================== */
 
   function lock() {
 
