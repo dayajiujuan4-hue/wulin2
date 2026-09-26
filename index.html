@@ -1,105 +1,194 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0">
 
-  <title>杭州・武林夜市 3D</title>
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
 
-  <link rel="stylesheet" href="./css/style.css">
+  <title>武林夜市 | Wulin Night Market</title>
 
-  <script type="importmap">
-  {
-    "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"
-    }
-  }
-  </script>
+  <link
+    rel="stylesheet"
+    href="./css/style.css"
+  >
+
 </head>
 
 <body>
 
-<div id="loadingScreen">
-  <div class="loading-box">
-    <div class="small">HANGZHOU · CHINA</div>
-    <h1>武林夜市</h1>
-    <div class="en">WULIN NIGHT MARKET</div>
+  <div id="loadingScreen">
 
-    <div class="loading-track">
-      <div id="loadingBar"></div>
+    <div class="loading-panel">
+
+      <div class="loading-en">
+        WULIN NIGHT MARKET
+      </div>
+
+      <h1>
+        武林夜市
+      </h1>
+
+      <div class="loading-line"></div>
+
+      <p>
+        夜市を準備しています...
+      </p>
+
+      <div id="loadingPercent">
+        0%
+      </div>
+
     </div>
 
-    <div id="loadingText">夜市を準備しています...</div>
   </div>
-</div>
 
-<div id="startScreen">
-  <div class="start-panel">
 
-    <div class="small">
-      HANGZHOU · WULIN ROAD
+  <div id="startScreen">
+
+    <div class="start-panel">
+
+      <div class="start-small">
+        HANGZHOU · CHINA
+      </div>
+
+      <h1>
+        武林夜市
+      </h1>
+
+      <p>
+        WULIN NIGHT MARKET
+      </p>
+
+      <button id="startButton">
+        夜市を歩く
+      </button>
+
+      <div class="controls">
+
+        WASD：移動<br>
+        SHIFT：走る<br>
+        マウス：視点操作
+
+      </div>
+
     </div>
 
-    <h1>武林夜市</h1>
+  </div>
 
-    <div class="gold-line"></div>
 
-    <p>
-      杭州の夜を歩く。<br>
-      メインストリートだけでなく、<br>
-      横丁や裏路地も自由に探索できます。
-    </p>
+  <div id="hud">
 
-    <button id="startButton">
-      夜市に入る
+    <div class="hud-city">
+      杭州 · HANGZHOU
+    </div>
+
+    <div class="hud-title">
+      武林夜市
+    </div>
+
+    <div id="zoneName">
+      武林路入口
+    </div>
+
+  </div>
+
+
+  <div id="timeHud">
+    20:18
+  </div>
+
+
+  <div id="fps">
+    FPS --
+  </div>
+
+
+  <div id="areaPopup">
+
+    <div class="area-small">
+      AREA DISCOVERED
+    </div>
+
+    <div id="areaPopupName">
+      武林夜市
+    </div>
+
+  </div>
+
+
+  <div id="qualityPanel">
+
+    <span>
+      GRAPHICS
+    </span>
+
+    <button data-quality="low">
+      LOW
     </button>
 
-    <div class="controls">
-      WASD　移動<br>
-      SHIFT　ダッシュ<br>
-      MOUSE　視点<br>
-      ESC　メニュー
-    </div>
+    <button
+      data-quality="medium"
+      class="active"
+    >
+      MED
+    </button>
+
+    <button data-quality="high">
+      HIGH
+    </button>
 
   </div>
-</div>
 
-<div id="hud">
-  <div class="hud-city">杭州 · HANGZHOU</div>
-  <div class="hud-title">武林夜市</div>
-  <div id="zoneName">武林路入口</div>
-</div>
 
-<div id="timeHud">20:18</div>
-
-<div id="fpsHud">
-  FPS <span id="fps">--</span>
-</div>
-
-<div id="areaPopup">
-  <div>AREA DISCOVERED</div>
-  <strong id="areaPopupName"></strong>
-</div>
-
-<div id="qualityPanel">
-  <span>QUALITY</span>
-  <button data-quality="low">LOW</button>
-  <button data-quality="medium" class="active">MED</button>
-  <button data-quality="high">HIGH</button>
-</div>
-
-<div id="crosshair"></div>
-<div id="vignette"></div>
-
-<div id="errorScreen">
-  <div>
-    <h2>読み込みエラー</h2>
-    <p id="errorText"></p>
-    <button onclick="location.reload()">再読み込み</button>
+  <div id="crosshair">
+    +
   </div>
-</div>
 
-<script type="module" src="./js/main.js"></script>
+
+  <div id="interaction">
+  </div>
+
+
+  <div id="vignette">
+  </div>
+
+
+  <div id="errorScreen">
+
+    <h2>
+      読み込みエラー
+    </h2>
+
+    <p>
+      F12 → Console を確認してください。
+    </p>
+
+  </div>
+
+
+  <script type="importmap">
+  {
+    "imports": {
+
+      "three":
+        "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+
+      "three/addons/":
+        "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+
+    }
+  }
+  </script>
+
+
+  <script
+    type="module"
+    src="./js/main.js"
+  ></script>
 
 </body>
 </html>
