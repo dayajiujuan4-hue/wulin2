@@ -31,27 +31,32 @@ import {
   updateAtmosphere
 } from "../effects/atmosphere.js";
 
+import {
+  createCrowd,
+  updateCrowd
+} from "../people/crowd.js";
+
+import {
+  createVendors,
+  updateVendors
+} from "../people/vendors.js";
+
 
 let animatedObjects = [];
 
+let crowdSystem = null;
+let vendorSystem = null;
 
-export function createWorld(
-  scene
-) {
+
+export function createWorld(scene) {
 
   const colliders = [];
 
-  createLighting(
-    scene
-  );
+  createLighting(scene);
 
-  createGround(
-    scene
-  );
+  createGround(scene);
 
-  createDistricts(
-    scene
-  );
+  createDistricts(scene);
 
   createBuildings(
     scene,
@@ -64,17 +69,23 @@ export function createWorld(
   );
 
   animatedObjects =
-    createNeon(
-      scene
-    );
+    createNeon(scene);
 
-  createProps(
-    scene
-  );
+  createProps(scene);
 
-  createAtmosphere(
-    scene
-  );
+  createAtmosphere(scene);
+
+
+  /*
+    PEOPLE
+  */
+
+  crowdSystem =
+    createCrowd(scene);
+
+  vendorSystem =
+    createVendors(scene);
+
 
   return {
     colliders
@@ -95,13 +106,17 @@ export function updateWorld(
     camera
   );
 
+
+  /*
+    NEON
+  */
+
   for (
     const object of
     animatedObjects
   ) {
 
-    object.material
-      .emissiveIntensity =
+    object.material.emissiveIntensity =
 
       object.userData.base +
 
@@ -109,9 +124,39 @@ export function updateWorld(
         time *
         object.userData.speed +
         object.userData.phase
-      )
+      ) * .25;
 
-      * .25;
+  }
+
+
+  /*
+    CROWD
+  */
+
+  if (crowdSystem) {
+
+    updateCrowd(
+      crowdSystem,
+      delta,
+      time,
+      camera
+    );
+
+  }
+
+
+  /*
+    VENDORS
+  */
+
+  if (vendorSystem) {
+
+    updateVendors(
+      vendorSystem,
+      delta,
+      time,
+      camera
+    );
 
   }
 
