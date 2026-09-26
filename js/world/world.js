@@ -67,6 +67,14 @@ import {
   updateCityLights
 } from "../effects/cityLights.js";
 
+import {
+  createInteractiveNPCs
+} from "../people/interactiveNPCs.js";
+
+
+/* =====================================================
+   SYSTEM REFERENCES
+===================================================== */
 
 let neonObjects = [];
 
@@ -75,6 +83,8 @@ let crowdSystem = null;
 let vendorSystem = null;
 
 let cityLightSystem = null;
+
+let interactiveNPCs = [];
 
 
 /* =====================================================
@@ -92,18 +102,18 @@ export function createWorld(
   const walkableObjects = [];
 
 
-  /*
-    Global lighting
-  */
+  /* ===================================================
+     GLOBAL LIGHTING
+  =================================================== */
 
   createLighting(
     scene
   );
 
 
-  /*
-    Ground
-  */
+  /* ===================================================
+     GROUND
+  =================================================== */
 
   const ground =
     createGround(
@@ -136,18 +146,18 @@ export function createWorld(
   }
 
 
-  /*
-    Roads / districts
-  */
+  /* ===================================================
+     DISTRICTS / ROADS
+  =================================================== */
 
   createDistricts(
     scene
   );
 
 
-  /*
-    Existing background buildings
-  */
+  /* ===================================================
+     BACKGROUND BUILDINGS
+  =================================================== */
 
   createBuildings(
     scene,
@@ -155,9 +165,9 @@ export function createWorld(
   );
 
 
-  /*
-    Enterable buildings
-  */
+  /* ===================================================
+     ENTERABLE BUILDINGS
+  =================================================== */
 
   createBuildingSystem(
     scene,
@@ -166,10 +176,9 @@ export function createWorld(
   );
 
 
-  /*
-    NEW:
-    richer shopfront architecture
-  */
+  /* ===================================================
+     DETAILED FACADES
+  =================================================== */
 
   createFacadeSystem(
     scene,
@@ -177,19 +186,18 @@ export function createWorld(
   );
 
 
-  /*
-    NEW:
-    Hangzhou skyline
-  */
+  /* ===================================================
+     HANGZHOU SKYLINE
+  =================================================== */
 
   createCityscape(
     scene
   );
 
 
-  /*
-    Market stalls
-  */
+  /* ===================================================
+     MARKET STALLS
+  =================================================== */
 
   createStalls(
     scene,
@@ -197,9 +205,9 @@ export function createWorld(
   );
 
 
-  /*
-    Neon
-  */
+  /* ===================================================
+     NEON
+  =================================================== */
 
   neonObjects =
     createNeon(
@@ -207,38 +215,36 @@ export function createWorld(
     ) || [];
 
 
-  /*
-    Existing props
-  */
+  /* ===================================================
+     EXISTING PROPS
+  =================================================== */
 
   createProps(
     scene
   );
 
 
-  /*
-    NEW:
-    street-level details
-  */
+  /* ===================================================
+     STREET DETAILS
+  =================================================== */
 
   createStreetDetails(
     scene
   );
 
 
-  /*
-    Wet streets
-  */
+  /* ===================================================
+     WET ROAD
+  =================================================== */
 
   createWetRoad(
     scene
   );
 
 
-  /*
-    NEW:
-    distant windows and city lights
-  */
+  /* ===================================================
+     CITY LIGHTS
+  =================================================== */
 
   cityLightSystem =
     createCityLights(
@@ -246,18 +252,18 @@ export function createWorld(
     );
 
 
-  /*
-    Atmosphere
-  */
+  /* ===================================================
+     ATMOSPHERE
+  =================================================== */
 
   createAtmosphere(
     scene
   );
 
 
-  /*
-    NPCs
-  */
+  /* ===================================================
+     NORMAL CROWD
+  =================================================== */
 
   crowdSystem =
     createCrowd(
@@ -265,15 +271,29 @@ export function createWorld(
     );
 
 
+  /* ===================================================
+     VENDORS
+  =================================================== */
+
   vendorSystem =
     createVendors(
       scene
     );
 
 
-  /*
-    Collect future Raycaster floors
-  */
+  /* ===================================================
+     INTERACTIVE NPCs
+  =================================================== */
+
+  interactiveNPCs =
+    createInteractiveNPCs(
+      scene
+    );
+
+
+  /* ===================================================
+     WALKABLE MESH COLLECTION
+  =================================================== */
 
   scene.traverse(
     object => {
@@ -283,9 +303,21 @@ export function createWorld(
         object.userData.walkable
       ) {
 
-        walkableObjects.push(
-          object
-        );
+        /*
+          Avoid adding same mesh twice.
+        */
+
+        if (
+          !walkableObjects.includes(
+            object
+          )
+        ) {
+
+          walkableObjects.push(
+            object
+          );
+
+        }
 
       }
 
@@ -293,13 +325,19 @@ export function createWorld(
   );
 
 
+  /* ===================================================
+     RETURN WORLD DATA
+  =================================================== */
+
   return {
 
     colliders,
 
     floorZones,
 
-    walkableObjects
+    walkableObjects,
+
+    interactiveNPCs
 
   };
 
@@ -307,7 +345,7 @@ export function createWorld(
 
 
 /* =====================================================
-   UPDATE
+   UPDATE WORLD
 ===================================================== */
 
 export function updateWorld(
@@ -316,6 +354,10 @@ export function updateWorld(
   camera
 ) {
 
+  /* ===================================================
+     ATMOSPHERE
+  =================================================== */
+
   updateAtmosphere(
     delta,
     time,
@@ -323,9 +365,9 @@ export function updateWorld(
   );
 
 
-  /*
-    Existing neon animation
-  */
+  /* ===================================================
+     NEON
+  =================================================== */
 
   if (
     typeof updateNeon ===
@@ -340,9 +382,9 @@ export function updateWorld(
   }
 
 
-  /*
-    City window animation
-  */
+  /* ===================================================
+     CITY LIGHTS
+  =================================================== */
 
   updateCityLights(
     cityLightSystem,
@@ -350,9 +392,9 @@ export function updateWorld(
   );
 
 
-  /*
-    NPCs
-  */
+  /* ===================================================
+     CROWD
+  =================================================== */
 
   if (
     crowdSystem
@@ -367,6 +409,10 @@ export function updateWorld(
 
   }
 
+
+  /* ===================================================
+     VENDORS
+  =================================================== */
 
   if (
     vendorSystem
