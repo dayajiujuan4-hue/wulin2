@@ -15,8 +15,7 @@ import {
 } from "./stalls.js";
 
 import {
-  createNeon,
-  updateNeon
+  createNeon
 } from "./neon.js";
 
 import {
@@ -28,8 +27,7 @@ import {
 } from "../effects/lighting.js";
 
 import {
-  createAtmosphere,
-  updateAtmosphere
+  createAtmosphere
 } from "../effects/atmosphere.js";
 
 import {
@@ -216,7 +214,7 @@ export function createWorld(
 
 
   /* ===================================================
-     EXISTING PROPS
+     PROPS
   =================================================== */
 
   createProps(
@@ -262,7 +260,7 @@ export function createWorld(
 
 
   /* ===================================================
-     NORMAL CROWD
+     CROWD
   =================================================== */
 
   crowdSystem =
@@ -292,7 +290,7 @@ export function createWorld(
 
 
   /* ===================================================
-     WALKABLE MESH COLLECTION
+     WALKABLE OBJECTS
   =================================================== */
 
   scene.traverse(
@@ -302,10 +300,6 @@ export function createWorld(
         object.isMesh &&
         object.userData.walkable
       ) {
-
-        /*
-          Avoid adding same mesh twice.
-        */
 
         if (
           !walkableObjects.includes(
@@ -326,7 +320,7 @@ export function createWorld(
 
 
   /* ===================================================
-     RETURN WORLD DATA
+     RETURN WORLD
   =================================================== */
 
   return {
@@ -355,29 +349,72 @@ export function updateWorld(
 ) {
 
   /* ===================================================
-     ATMOSPHERE
-  =================================================== */
+     SIMPLE NEON ANIMATION
 
-  updateAtmosphere(
-    delta,
-    time,
-    camera
-  );
-
-
-  /* ===================================================
-     NEON
+     neon.js に updateNeon が無くても
+     ここで安全にアニメーションさせる
   =================================================== */
 
   if (
-    typeof updateNeon ===
-    "function"
+    Array.isArray(
+      neonObjects
+    )
   ) {
 
-    updateNeon(
-      neonObjects,
-      time
-    );
+    for (
+      const object of
+      neonObjects
+    ) {
+
+      if (
+        !object ||
+        !object.material
+      ) {
+
+        continue;
+
+      }
+
+
+      /*
+        EmissiveMaterialを持つものだけ
+        アニメーションする
+      */
+
+      if (
+        "emissiveIntensity"
+        in object.material
+      ) {
+
+        const base =
+          object.userData.base ??
+          2.2;
+
+
+        const speed =
+          object.userData.speed ??
+          1;
+
+
+        const phase =
+          object.userData.phase ??
+          0;
+
+
+        object.material.emissiveIntensity =
+
+          base +
+
+          Math.sin(
+            time * speed +
+            phase
+          ) *
+
+          0.3;
+
+      }
+
+    }
 
   }
 
@@ -386,10 +423,16 @@ export function updateWorld(
      CITY LIGHTS
   =================================================== */
 
-  updateCityLights(
-    cityLightSystem,
-    time
-  );
+  if (
+    cityLightSystem
+  ) {
+
+    updateCityLights(
+      cityLightSystem,
+      time
+    );
+
+  }
 
 
   /* ===================================================
