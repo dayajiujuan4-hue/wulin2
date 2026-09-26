@@ -5,7 +5,10 @@ import {
   addCollider,
   createWallMaterial,
   createFloorMaterial,
-  createWindow
+  createWindow,
+  createAC,
+  createPipe,
+  createRailing
 } from "./details.js";
 
 import {
@@ -21,31 +24,25 @@ export function createApartment(
   z
 ) {
 
-  const width =
-    8;
+  const width = 8;
+  const depth = 9;
 
-  const depth =
-    9;
-
-  const floorHeight =
-    2.8;
-
+  const floorHeight = 2.8;
 
   const wall =
     createWallMaterial(
-      0x9b978f
+      0x8f8b83
     );
-
 
   const concrete =
     createFloorMaterial(
-      0x686762
+      0x62615c
     );
 
 
-  /* ===================================================
-     GROUND FLOOR
-  =================================================== */
+  /* =====================================================
+     FLOOR 1
+  ===================================================== */
 
   addBox(
     scene,
@@ -61,35 +58,28 @@ export function createApartment(
 
   floorZones.push({
 
-    minX:
-      x - width / 2,
+    minX: x - 4,
+    maxX: x + 4,
 
-    maxX:
-      x + width / 2,
+    minZ: z - 4.5,
+    maxZ: z + 4.5,
 
-    minZ:
-      z - depth / 2,
-
-    maxZ:
-      z + depth / 2,
-
-    height:
-      0
+    height: 0
 
   });
 
 
   /*
-    Back wall
+    Exterior walls
   */
 
   addBox(
     scene,
     x,
-    floorHeight / 2,
-    z + depth / 2,
-    width,
-    floorHeight,
+    1.4,
+    z + 4.5,
+    8,
+    2.8,
     0.18,
     wall
   );
@@ -98,451 +88,609 @@ export function createApartment(
   addCollider(
     colliders,
     x,
-    z + depth / 2,
-    width,
+    z + 4.5,
+    8,
     0.18
   );
 
 
-  /*
-    Side walls
-  */
-
   addBox(
     scene,
-    x - width / 2,
-    floorHeight / 2,
+    x - 4,
+    1.4,
     z,
     0.18,
-    floorHeight,
-    depth,
+    2.8,
+    9,
     wall
   );
 
 
   addCollider(
     colliders,
-    x - width / 2,
+    x - 4,
     z,
     0.18,
-    depth
+    9
   );
 
 
   addBox(
     scene,
-    x + width / 2,
-    floorHeight / 2,
+    x + 4,
+    1.4,
     z,
     0.18,
-    floorHeight,
-    depth,
+    2.8,
+    9,
     wall
   );
 
 
   addCollider(
     colliders,
-    x + width / 2,
+    x + 4,
     z,
     0.18,
-    depth
+    9
   );
 
 
   /*
-    Front sections
-
-    Large entrance opening.
+    Front wall pieces
   */
 
   addBox(
     scene,
     x - 3,
-    floorHeight / 2,
-    z - depth / 2,
+    1.4,
+    z - 4.5,
     2,
-    floorHeight,
+    2.8,
     0.18,
     wall
-  );
-
-
-  addCollider(
-    colliders,
-    x - 3,
-    z - depth / 2,
-    2,
-    0.18
   );
 
 
   addBox(
     scene,
     x + 3,
-    floorHeight / 2,
-    z - depth / 2,
+    1.4,
+    z - 4.5,
     2,
-    floorHeight,
+    2.8,
     0.18,
     wall
   );
 
 
-  addCollider(
-    colliders,
-    x + 3,
-    z - depth / 2,
-    2,
-    0.18
-  );
-
-
   /*
-    Ground floor ceiling /
-    second floor
+    Mailboxes
   */
 
-  addBox(
+  const mailboxMaterial =
+    new THREE.MeshStandardMaterial({
+      color: 0x55585b,
+      metalness: 0.35
+    });
+
+
+  for (
+    let row = 0;
+    row < 2;
+    row++
+  ) {
+
+    for (
+      let col = 0;
+      col < 4;
+      col++
+    ) {
+
+      addBox(
+        scene,
+        x - 1.2 + col * 0.42,
+        0.9 + row * 0.35,
+        z + 4.35,
+        0.34,
+        0.26,
+        0.12,
+        mailboxMaterial
+      );
+
+    }
+
+  }
+
+
+  /* =====================================================
+     FLOOR 2
+  ===================================================== */
+
+  createFloor(
     scene,
+    floorZones,
     x,
-    floorHeight,
     z,
     width,
-    0.16,
     depth,
+    floorHeight,
     concrete
   );
 
 
-  /* ===================================================
-     STAIRS
-  =================================================== */
+  /*
+    Stair 1 → 2
+  */
 
   createStairs(
     scene,
     floorZones,
     {
-
-      x:
-        x + 2.5,
-
-      z:
-        z,
-
-      width:
-        1.25,
-
-      steps:
-        14,
-
-      stepHeight:
-        0.2,
-
-      stepDepth:
-        0.3,
-
-      direction:
-        "z"
-
+      x: x + 2.5,
+      z: z,
+      width: 1.25,
+      steps: 14,
+      stepHeight: 0.2,
+      stepDepth: 0.3,
+      direction: "z"
     }
   );
 
 
-  /* ===================================================
-     SECOND FLOOR WALKABLE AREA
-  =================================================== */
-
-  floorZones.push({
-
-    minX:
-      x - width / 2 + 0.25,
-
-    maxX:
-      x + width / 2 - 0.25,
-
-    minZ:
-      z - depth / 2 + 0.25,
-
-    maxZ:
-      z + depth / 2 - 0.25,
-
-    height:
-      floorHeight
-
-  });
+  createUpperWalls(
+    scene,
+    x,
+    z,
+    floorHeight,
+    wall
+  );
 
 
-  /* ===================================================
-     SECOND FLOOR WALLS
-  =================================================== */
+  /* =====================================================
+     FLOOR 3
+  ===================================================== */
 
-  const secondWallHeight =
-    2.7;
+  const thirdY =
+    floorHeight * 2;
+
+
+  createFloor(
+    scene,
+    floorZones,
+    x,
+    z,
+    width,
+    depth,
+    thirdY,
+    concrete
+  );
 
 
   /*
-    Back
+    Second stair positioned on
+    opposite side of building.
   */
+
+  createStairs(
+    scene,
+    floorZones,
+    {
+      x: x - 2.5,
+      z: z,
+      width: 1.25,
+      steps: 14,
+      stepHeight: 0.2,
+      stepDepth: 0.3,
+      direction: "z"
+    }
+  );
+
+
+  /*
+    Important:
+    second stair needs +2.8m offset.
+  */
+
+  const latestZones =
+    floorZones.slice(-1);
+
+
+  for (
+    const zone of latestZones
+  ) {
+
+    if (
+      zone.type === "stairs"
+    ) {
+
+      zone.startHeight +=
+        floorHeight;
+
+      zone.endHeight +=
+        floorHeight;
+
+    }
+
+  }
+
+
+  /*
+    Move visible second staircase up.
+    createStairs itself builds at ground,
+    therefore move the generated meshes
+    using a separate visual staircase.
+  */
+
+  createElevatedStairsVisual(
+    scene,
+    x - 2.5,
+    z,
+    floorHeight
+  );
+
+
+  createUpperWalls(
+    scene,
+    x,
+    z,
+    thirdY,
+    wall
+  );
+
+
+  /* =====================================================
+     WINDOWS
+  ===================================================== */
+
+  for (
+    const level of [
+      floorHeight,
+      thirdY
+    ]
+  ) {
+
+    createWindow(
+      scene,
+      x - 2.25,
+      level + 1.4,
+      z - 4.6,
+      0,
+      Math.random() > 0.3
+    );
+
+
+    createWindow(
+      scene,
+      x + 2.25,
+      level + 1.4,
+      z - 4.6,
+      0,
+      Math.random() > 0.3
+    );
+
+  }
+
+
+  /* =====================================================
+     BALCONIES
+  ===================================================== */
+
+  for (
+    const level of [
+      floorHeight,
+      thirdY
+    ]
+  ) {
+
+    addBox(
+      scene,
+      x,
+      level,
+      z - 5.15,
+      7,
+      0.15,
+      1.3,
+      concrete
+    );
+
+
+    floorZones.push({
+
+      minX: x - 3.5,
+      maxX: x + 3.5,
+
+      minZ: z - 5.8,
+      maxZ: z - 4.5,
+
+      height: level
+
+    });
+
+
+    createRailing(
+      scene,
+      x,
+      level,
+      z - 5.8,
+      7,
+      "x"
+    );
+
+  }
+
+
+  /* =====================================================
+     BUILDING DETAILS
+  ===================================================== */
+
+  createAC(
+    scene,
+    x - 2.6,
+    4.4,
+    z + 4.75,
+    Math.PI
+  );
+
+
+  createAC(
+    scene,
+    x + 2.3,
+    7.1,
+    z + 4.75,
+    Math.PI
+  );
+
+
+  createPipe(
+    scene,
+    x + 3.6,
+    4.2,
+    z + 4.65,
+    8
+  );
+
+
+  createPipe(
+    scene,
+    x - 3.55,
+    4.2,
+    z + 4.65,
+    8
+  );
+
+
+  /*
+    Interior lights
+  */
+
+  for (
+    const y of [
+      2.2,
+      5,
+      7.6
+    ]
+  ) {
+
+    const light =
+      new THREE.PointLight(
+        0xffbd72,
+        2.5,
+        7,
+        2
+      );
+
+
+    light.position.set(
+      x,
+      y,
+      z
+    );
+
+
+    scene.add(light);
+
+  }
+
+}
+
+
+/* =====================================================
+   FLOOR
+===================================================== */
+
+function createFloor(
+  scene,
+  floorZones,
+  x,
+  z,
+  width,
+  depth,
+  y,
+  material
+) {
 
   addBox(
     scene,
     x,
-    floorHeight + secondWallHeight / 2,
-    z + depth / 2,
+    y,
+    z,
     width,
-    secondWallHeight,
-    0.18,
-    wall
+    0.16,
+    depth,
+    material
   );
 
 
-  /*
-    Left
-  */
+  floorZones.push({
+
+    minX: x - width / 2 + 0.2,
+    maxX: x + width / 2 - 0.2,
+
+    minZ: z - depth / 2 + 0.2,
+    maxZ: z + depth / 2 - 0.2,
+
+    height: y
+
+  });
+
+}
+
+
+/* =====================================================
+   UPPER WALLS
+===================================================== */
+
+function createUpperWalls(
+  scene,
+  x,
+  z,
+  baseY,
+  material
+) {
+
+  const h = 2.7;
+
 
   addBox(
     scene,
-    x - width / 2,
-    floorHeight + secondWallHeight / 2,
-    z,
+    x,
+    baseY + h / 2,
+    z + 4.5,
+    8,
+    h,
     0.18,
-    secondWallHeight,
-    depth,
-    wall
+    material
   );
 
-
-  /*
-    Right
-  */
 
   addBox(
     scene,
-    x + width / 2,
-    floorHeight + secondWallHeight / 2,
+    x - 4,
+    baseY + h / 2,
     z,
     0.18,
-    secondWallHeight,
-    depth,
-    wall
+    h,
+    9,
+    material
+  );
+
+
+  addBox(
+    scene,
+    x + 4,
+    baseY + h / 2,
+    z,
+    0.18,
+    h,
+    9,
+    material
   );
 
 
   /*
-    Partial front wall.
-
-    Middle remains open as balcony.
+    Front wall with central opening
   */
 
   addBox(
     scene,
     x - 3,
-    floorHeight + secondWallHeight / 2,
-    z - depth / 2,
+    baseY + h / 2,
+    z - 4.5,
     2,
-    secondWallHeight,
+    h,
     0.18,
-    wall
+    material
   );
 
 
   addBox(
     scene,
     x + 3,
-    floorHeight + secondWallHeight / 2,
-    z - depth / 2,
+    baseY + h / 2,
+    z - 4.5,
     2,
-    secondWallHeight,
+    h,
     0.18,
-    wall
+    material
   );
 
-
-  /* ===================================================
-     BALCONY
-  =================================================== */
-
-  const balconyDepth =
-    1.5;
+}
 
 
-  addBox(
-    scene,
-    x,
-    floorHeight,
-    z - depth / 2 - balconyDepth / 2,
-    width - 1,
-    0.16,
-    balconyDepth,
-    concrete
-  );
+/* =====================================================
+   ELEVATED STAIR VISUAL
+===================================================== */
 
+function createElevatedStairsVisual(
+  scene,
+  x,
+  z,
+  baseY
+) {
 
-  floorZones.push({
-
-    minX:
-      x - width / 2 + 0.5,
-
-    maxX:
-      x + width / 2 - 0.5,
-
-    minZ:
-      z - depth / 2 - balconyDepth,
-
-    maxZ:
-      z - depth / 2,
-
-    height:
-      floorHeight
-
-  });
-
-
-  /*
-    Balcony rail
-  */
-
-  const railMaterial =
+  const material =
     new THREE.MeshStandardMaterial({
-
-      color:
-        0x25282b,
-
-      metalness:
-        0.45,
-
-      roughness:
-        0.5
-
+      color: 0x77736d,
+      roughness: 0.82
     });
 
 
-  addBox(
-    scene,
-    x,
-    floorHeight + 0.55,
-    z - depth / 2 - balconyDepth,
-    width - 1,
-    0.08,
-    0.08,
-    railMaterial
-  );
+  const steps = 14;
+
+  const stepHeight = 0.2;
+
+  const stepDepth = 0.3;
+
+  const width = 1.25;
+
+  const totalLength =
+    steps * stepDepth;
 
 
   for (
-    let rx = -3;
-    rx <= 3;
-    rx += 1
+    let i = 0;
+    i < steps;
+    i++
   ) {
 
-    addBox(
-      scene,
-      x + rx,
-      floorHeight + 0.3,
-      z - depth / 2 - balconyDepth,
-      0.06,
-      0.6,
-      0.06,
-      railMaterial
+    const height =
+      (i + 1) *
+      stepHeight;
+
+
+    const step =
+      new THREE.Mesh(
+
+        new THREE.BoxGeometry(
+          width,
+          height,
+          stepDepth
+        ),
+
+        material
+
+      );
+
+
+    step.position.set(
+
+      x,
+
+      baseY +
+      height / 2,
+
+      z -
+      totalLength / 2 +
+      stepDepth / 2 +
+      i *
+      stepDepth
+
     );
+
+
+    scene.add(step);
 
   }
-
-
-  /* ===================================================
-     WINDOWS
-  =================================================== */
-
-  createWindow(
-    scene,
-    x - 2.3,
-    floorHeight + 1.4,
-    z - depth / 2 - 0.1
-  );
-
-
-  createWindow(
-    scene,
-    x + 2.3,
-    floorHeight + 1.4,
-    z - depth / 2 - 0.1
-  );
-
-
-  /* ===================================================
-     ROOF
-  =================================================== */
-
-  addBox(
-    scene,
-    x,
-    floorHeight * 2,
-    z,
-    width,
-    0.18,
-    depth,
-    new THREE.MeshStandardMaterial({
-      color: 0x4a4b49
-    })
-  );
-
-
-  /* ===================================================
-     AIR CONDITIONERS
-  =================================================== */
-
-  const acMaterial =
-    new THREE.MeshStandardMaterial({
-      color: 0xbab9b3
-    });
-
-
-  for (
-    const offset of [-2.5, 0, 2.5]
-  ) {
-
-    addBox(
-      scene,
-      x + offset,
-      4.5,
-      z + depth / 2 + 0.28,
-      1,
-      0.65,
-      0.45,
-      acMaterial
-    );
-
-  }
-
-
-  /* ===================================================
-     SECOND FLOOR LIGHT
-  =================================================== */
-
-  const light =
-    new THREE.PointLight(
-
-      0xffc47d,
-
-      3,
-
-      7,
-
-      2
-
-    );
-
-
-  light.position.set(
-    x,
-    4.7,
-    z
-  );
-
-
-  scene.add(
-    light
-  );
 
 }
