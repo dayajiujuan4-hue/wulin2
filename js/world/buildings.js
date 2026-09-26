@@ -1,7 +1,7 @@
 import * as THREE from "three";
 
 
-const boxGeometry =
+const unitBox =
   new THREE.BoxGeometry(
     1,
     1,
@@ -12,23 +12,23 @@ const boxGeometry =
 const buildingMaterials = [
 
   new THREE.MeshStandardMaterial({
-    color: 0x32363d,
-    roughness: .9
+    color: 0x5d6268,
+    roughness: 0.95
   }),
 
   new THREE.MeshStandardMaterial({
-    color: 0x403a39,
-    roughness: .92
+    color: 0x77726b,
+    roughness: 0.95
   }),
 
   new THREE.MeshStandardMaterial({
-    color: 0x292e36,
-    roughness: .88
+    color: 0x51575d,
+    roughness: 0.95
   }),
 
   new THREE.MeshStandardMaterial({
-    color: 0x3c3e42,
-    roughness: .9
+    color: 0x6e6862,
+    roughness: 0.95
   })
 
 ];
@@ -36,32 +36,31 @@ const buildingMaterials = [
 
 const windowDark =
   new THREE.MeshStandardMaterial({
-
-    color:
-      0x111720,
-
-    roughness:
-      .35
-
+    color: 0x151b22,
+    roughness: 0.4
   });
 
 
 const windowLight =
   new THREE.MeshStandardMaterial({
 
-    color:
-      0xd9974d,
+    color: 0xffd59a,
 
-    emissive:
-      0xff792d,
+    emissive: 0xff9c42,
 
-    emissiveIntensity:
-      .75,
+    emissiveIntensity: 0.5,
 
-    roughness:
-      .4
+    roughness: 0.45
 
   });
+
+
+const windowGeometry =
+  new THREE.BoxGeometry(
+    0.65,
+    0.75,
+    0.06
+  );
 
 
 function addCollider(
@@ -91,6 +90,10 @@ function addCollider(
 }
 
 
+/* =====================================================
+   BACKGROUND BUILDING
+===================================================== */
+
 function createBuilding(
   scene,
   colliders,
@@ -102,21 +105,20 @@ function createBuilding(
   index
 ) {
 
-  const group =
-    new THREE.Group();
+  const material =
+
+    buildingMaterials[
+      index %
+      buildingMaterials.length
+    ];
 
 
   const body =
     new THREE.Mesh(
-
-      boxGeometry,
-
-      buildingMaterials[
-        index %
-        buildingMaterials.length
-      ]
-
+      unitBox,
+      material
     );
+
 
   body.scale.set(
     width,
@@ -124,92 +126,49 @@ function createBuilding(
     depth
   );
 
-  body.position.y =
-    height / 2;
+
+  body.position.set(
+    x,
+    height / 2,
+    z
+  );
+
 
   body.receiveShadow =
     true;
 
-  group.add(
+
+  scene.add(
     body
   );
 
 
   /*
-    Ground-floor commercial glow.
+    Windows
   */
 
-  const shopGlow =
-    new THREE.Mesh(
-
-      boxGeometry,
-
-      new THREE.MeshStandardMaterial({
-
-        color:
-          0x4a2c20,
-
-        emissive:
-          0x7c3514,
-
-        emissiveIntensity:
-          .55,
-
-        roughness:
-          .5
-
-      })
-
-    );
-
-  shopGlow.scale.set(
-    width + .08,
-    2.4,
-    depth + .08
-  );
-
-  shopGlow.position.y =
-    1.2;
-
-  group.add(
-    shopGlow
-  );
-
-
-  /*
-    Windows only on the street-facing
-    surfaces. Shared geometries/materials.
-  */
-
-  const windowGeometry =
-    new THREE.PlaneGeometry(
-      .72,
-      .85
-    );
-
-  const rows =
+  const floors =
     Math.max(
-      1,
+      2,
       Math.floor(
-        (height - 3) /
-        1.7
+        height / 2.5
       )
     );
+
 
   const columns =
     Math.max(
       2,
       Math.floor(
-        width /
-        1.5
+        width / 2
       )
     );
 
 
   for (
-    let row = 0;
-    row < rows;
-    row++
+    let floor = 1;
+    floor < floors;
+    floor++
   ) {
 
     for (
@@ -218,45 +177,48 @@ function createBuilding(
       column++
     ) {
 
-      if (
-        (row + column + index) %
-        2 !== 0
-      ) continue;
-
-      const window =
+      const windowMesh =
         new THREE.Mesh(
 
           windowGeometry,
 
-          Math.random() > .5
+          Math.random() >
+          0.72
+
             ? windowLight
             : windowDark
 
         );
 
-      window.position.set(
 
-        -width / 2 +
-        1 +
+      const spacing =
+        width /
+        columns;
+
+
+      windowMesh.position.set(
+
+        x -
+        width / 2 +
+
+        spacing / 2 +
+
         column *
-        (
-          (width - 2) /
-          Math.max(
-            1,
-            columns - 1
-          )
-        ),
+        spacing,
 
-        3.5 +
-        row * 1.7,
+        1.4 +
+        floor *
+        2.1,
 
-        depth / 2 +
-        .01
+        z -
+        depth / 2 -
+        0.035
 
       );
 
-      group.add(
-        window
+
+      scene.add(
+        windowMesh
       );
 
     }
@@ -265,45 +227,34 @@ function createBuilding(
 
 
   /*
-    Roof details
+    Roof detail
   */
 
   const roof =
     new THREE.Mesh(
 
-      boxGeometry,
+      new THREE.BoxGeometry(
+        width * 0.28,
+        0.45,
+        depth * 0.28
+      ),
 
       new THREE.MeshStandardMaterial({
-        color: 0x171a20
+        color: 0x34383d
       })
 
     );
 
-  roof.scale.set(
-    width * .45,
-    .35,
-    depth * .35
-  );
 
   roof.position.set(
-    0,
-    height + .18,
-    0
-  );
-
-  group.add(
-    roof
-  );
-
-
-  group.position.set(
     x,
-    0,
+    height + 0.22,
     z
   );
 
+
   scene.add(
-    group
+    roof
   );
 
 
@@ -318,6 +269,10 @@ function createBuilding(
 }
 
 
+/* =====================================================
+   CREATE BACKGROUND BUILDINGS
+===================================================== */
+
 export function createBuildings(
   scene,
   colliders
@@ -327,34 +282,35 @@ export function createBuildings(
 
 
   /*
-    Main street west/east
+    Main street
   */
 
   for (
-    let z = 17;
-    z > -48;
-    z -= 11
+    let z = 12;
+    z >= -46;
+    z -= 13
   ) {
 
     createBuilding(
       scene,
       colliders,
-      -12,
+      -14.5,
       z,
-      8,
-      9,
-      7 + index % 4 * 1.5,
+      6,
+      10,
+      9 + Math.random() * 5,
       index++
     );
+
 
     createBuilding(
       scene,
       colliders,
-      12,
-      z - 3,
-      8,
-      9,
-      8 + index % 3 * 1.6,
+      14.5,
+      z,
+      6,
+      10,
+      9 + Math.random() * 5,
       index++
     );
 
@@ -362,13 +318,39 @@ export function createBuildings(
 
 
   /*
-    Food district
+    Food district background
+
+    West side is kept mostly intact.
   */
 
   for (
-    let x = -40;
-    x <= -18;
-    x += 8
+    let x = -37;
+    x <= -17;
+    x += 10
+  ) {
+
+    createBuilding(
+      scene,
+      colliders,
+      x,
+      -88,
+      8,
+      8,
+      9 + Math.random() * 4,
+      index++
+    );
+
+  }
+
+
+  /*
+    Neon plaza background
+  */
+
+  for (
+    let x = 16;
+    x <= 34;
+    x += 9
   ) {
 
     createBuilding(
@@ -377,8 +359,8 @@ export function createBuildings(
       x,
       -84,
       7,
-      8,
-      6 + index % 3,
+      7,
+      11 + Math.random() * 4,
       index++
     );
 
@@ -386,96 +368,79 @@ export function createBuildings(
 
 
   /*
-    Neon plaza edge
+    Creative district
+
+    Leave several gaps for
+    explorable buildings.
   */
 
-  for (
-    let x = 17;
-    x <= 38;
-    x += 8
-  ) {
-
-    createBuilding(
-      scene,
-      colliders,
-      x,
-      -80,
-      7,
-      8,
-      9 + index % 4,
-      index++
-    );
-
-  }
+  createBuilding(
+    scene,
+    colliders,
+    -13,
+    -113,
+    5,
+    8,
+    10,
+    index++
+  );
 
 
-  /*
-    Creative street
-  */
-
-  for (
-    let z = -84;
-    z >= -120;
-    z -= 10
-  ) {
-
-    createBuilding(
-      scene,
-      colliders,
-      -11,
-      z,
-      7,
-      8,
-      7 + index % 3,
-      index++
-    );
-
-    createBuilding(
-      scene,
-      colliders,
-      11,
-      z - 3,
-      7,
-      8,
-      8 + index % 4,
-      index++
-    );
-
-  }
+  createBuilding(
+    scene,
+    colliders,
+    13,
+    -113,
+    5,
+    8,
+    11,
+    index++
+  );
 
 
   /*
     Back alley
+
+    IMPORTANT:
+    Old fake buildings are reduced.
+
+    New apartment / restaurant
+    will occupy this district.
   */
 
-  for (
-    let z = 0;
-    z > -45;
-    z -= 10
-  ) {
+  createBuilding(
+    scene,
+    colliders,
+    34,
+    -5,
+    7,
+    10,
+    11,
+    index++
+  );
 
-    createBuilding(
-      scene,
-      colliders,
-      22,
-      z,
-      6,
-      7,
-      8 + index % 4,
-      index++
-    );
 
-    createBuilding(
-      scene,
-      colliders,
-      33,
-      z - 4,
-      7,
-      8,
-      7 + index % 3,
-      index++
-    );
+  createBuilding(
+    scene,
+    colliders,
+    34,
+    -39,
+    7,
+    9,
+    12,
+    index++
+  );
 
-  }
+
+  createBuilding(
+    scene,
+    colliders,
+    22,
+    -43,
+    7,
+    7,
+    9,
+    index++
+  );
 
 }
