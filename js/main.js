@@ -32,145 +32,6 @@ import {
 
 
 /* =====================================================
-   GLOBAL ERROR DISPLAY
-===================================================== */
-
-function showFatalError(error) {
-
-  console.error(
-    "WULIN NIGHT MARKET ERROR:",
-    error
-  );
-
-
-  const loading =
-    document.getElementById(
-      "loadingScreen"
-    );
-
-
-  if (loading) {
-
-    loading.style.display =
-      "none";
-
-  }
-
-
-  let panel =
-    document.getElementById(
-      "fatalErrorPanel"
-    );
-
-
-  if (!panel) {
-
-    panel =
-      document.createElement(
-        "div"
-      );
-
-
-    panel.id =
-      "fatalErrorPanel";
-
-
-    panel.style.position =
-      "fixed";
-
-    panel.style.left =
-      "20px";
-
-    panel.style.right =
-      "20px";
-
-    panel.style.top =
-      "20px";
-
-    panel.style.zIndex =
-      "999999";
-
-    panel.style.padding =
-      "20px";
-
-    panel.style.background =
-      "rgba(30, 0, 0, 0.96)";
-
-    panel.style.border =
-      "1px solid #ff5555";
-
-    panel.style.borderRadius =
-      "10px";
-
-    panel.style.color =
-      "#ffffff";
-
-    panel.style.fontFamily =
-      "monospace";
-
-    panel.style.whiteSpace =
-      "pre-wrap";
-
-    panel.style.overflowWrap =
-      "anywhere";
-
-
-    document.body.appendChild(
-      panel
-    );
-
-  }
-
-
-  const message =
-
-    error?.stack ||
-    error?.message ||
-    String(error);
-
-
-  panel.textContent =
-
-    "武林夜市の読み込み中にエラーが発生しました。\n\n" +
-    message;
-
-}
-
-
-/* =====================================================
-   GLOBAL BROWSER ERRORS
-===================================================== */
-
-window.addEventListener(
-  "error",
-  event => {
-
-    showFatalError(
-
-      event.error ||
-      event.message ||
-      "Unknown JavaScript error"
-
-    );
-
-  }
-);
-
-
-window.addEventListener(
-  "unhandledrejection",
-  event => {
-
-    showFatalError(
-      event.reason ||
-      "Unhandled Promise rejection"
-    );
-
-  }
-);
-
-
-/* =====================================================
    SCENE
 ===================================================== */
 
@@ -186,8 +47,11 @@ scene.background =
 
 scene.fog =
   new THREE.FogExp2(
+
     0x07101c,
+
     CONFIG.quality.medium.fogDensity
+
   );
 
 
@@ -219,52 +83,54 @@ scene.add(
    RENDERER
 ===================================================== */
 
-let renderer = null;
-
-let post = null;
-
-let world = null;
-
-let player = null;
-
-let dialogueSystem = null;
-
-let interactionSystem = null;
+const renderer =
+  createRenderer();
 
 
 /* =====================================================
-   INITIALIZE
+   POST PROCESSING
+===================================================== */
+
+const post =
+  createPostProcessing(
+
+    renderer,
+
+    scene,
+
+    camera
+
+  );
+
+
+/* =====================================================
+   SYSTEMS
+===================================================== */
+
+let world =
+  null;
+
+
+let player =
+  null;
+
+
+let dialogueSystem =
+  null;
+
+
+let interactionSystem =
+  null;
+
+
+/* =====================================================
+   INITIALIZATION
 ===================================================== */
 
 try {
 
   setLoading(
-    5,
-    "レンダラーを準備しています..."
-  );
-
-
-  renderer =
-    createRenderer();
-
-
-  setLoading(
-    15,
-    "光と映像処理を準備しています..."
-  );
-
-
-  post =
-    createPostProcessing(
-      renderer,
-      scene,
-      camera
-    );
-
-
-  setLoading(
-    25,
-    "武林夜市を作っています..."
+    10
   );
 
 
@@ -275,8 +141,7 @@ try {
 
 
   setLoading(
-    70,
-    "プレイヤーを準備しています..."
+    60
   );
 
 
@@ -287,18 +152,17 @@ try {
 
       renderer.domElement,
 
-      world.colliders || [],
+      world.colliders,
 
-      world.floorZones || [],
+      world.floorZones,
 
-      world.walkableObjects || []
+      world.walkableObjects
 
     );
 
 
   setLoading(
-    82,
-    "会話システムを準備しています..."
+    78
   );
 
 
@@ -306,18 +170,12 @@ try {
     createDialogueSystem();
 
 
-  setLoading(
-    90,
-    "NPCを準備しています..."
-  );
-
-
   interactionSystem =
     createInteractionSystem(
 
       player,
 
-      world.interactiveNPCs || [],
+      world.interactiveNPCs,
 
       dialogueSystem
 
@@ -325,13 +183,27 @@ try {
 
 
   setLoading(
-    100,
-    "完成"
+    100
   );
 
 
   setTimeout(
-    finishLoading,
+    () => {
+
+      const loading =
+        document.getElementById(
+          "loadingScreen"
+        );
+
+
+      if (loading) {
+
+        loading.style.display =
+          "none";
+
+      }
+
+    },
     350
   );
 
@@ -339,31 +211,14 @@ try {
 
 catch (error) {
 
-  showFatalError(
+  console.error(
     error
   );
 
-}
 
-
-/* =====================================================
-   FINISH LOADING
-===================================================== */
-
-function finishLoading() {
-
-  const loading =
-    document.getElementById(
-      "loadingScreen"
-    );
-
-
-  if (loading) {
-
-    loading.style.display =
-      "none";
-
-  }
+  showError(
+    error
+  );
 
 }
 
@@ -406,7 +261,7 @@ if (startButton) {
 
 
 /* =====================================================
-   POINTER LOCK EVENTS
+   POINTER LOCK
 ===================================================== */
 
 if (player) {
@@ -416,18 +271,8 @@ if (player) {
     () => {
 
       if (
-
-        dialogueSystem &&
-        dialogueSystem.isOpen()
-
+        startScreen
       ) {
-
-        return;
-
-      }
-
-
-      if (startScreen) {
 
         startScreen.style.display =
           "none";
@@ -442,14 +287,19 @@ if (player) {
     "unlock",
     () => {
 
-      if (
+      /*
+        NPC dialogue intentionally
+        unlocks mouse.
+      */
 
+      if (
         dialogueSystem &&
         dialogueSystem.isOpen()
-
       ) {
 
-        if (startScreen) {
+        if (
+          startScreen
+        ) {
 
           startScreen.style.display =
             "none";
@@ -462,7 +312,9 @@ if (player) {
       }
 
 
-      if (startScreen) {
+      if (
+        startScreen
+      ) {
 
         startScreen.style.display =
           "flex";
@@ -476,55 +328,16 @@ if (player) {
 
 
 /* =====================================================
-   CANVAS CLICK
+   RESUME GAME
 ===================================================== */
 
-if (renderer) {
-
-  renderer.domElement.addEventListener(
-    "click",
-    () => {
-
-      if (
-
-        dialogueSystem &&
-        dialogueSystem.isOpen()
-
-      ) {
-
-        return;
-
-      }
-
-
-      if (
-
-        player &&
-        !player.controls.isLocked
-
-      ) {
-
-        player.lock();
-
-      }
-
-    }
-  );
-
-}
-
-
-/* =====================================================
-   ESC DIALOGUE
-===================================================== */
-
-window.addEventListener(
-  "keydown",
-  event => {
+renderer.domElement.addEventListener(
+  "click",
+  () => {
 
     if (
-      event.code !==
-      "Escape"
+      dialogueSystem &&
+      dialogueSystem.isOpen()
     ) {
 
       return;
@@ -533,10 +346,31 @@ window.addEventListener(
 
 
     if (
+      player &&
+      !player.controls.isLocked
+    ) {
 
+      player.lock();
+
+    }
+
+  }
+);
+
+
+/* =====================================================
+   ESC
+===================================================== */
+
+window.addEventListener(
+  "keydown",
+  event => {
+
+    if (
+      event.code ===
+      "Escape" &&
       dialogueSystem &&
       dialogueSystem.isOpen()
-
     ) {
 
       dialogueSystem.close();
@@ -548,11 +382,15 @@ window.addEventListener(
 
 
 /* =====================================================
-   AREA SYSTEM
+   AREA
 ===================================================== */
 
 let currentArea =
   "";
+
+
+let popupTimer =
+  null;
 
 
 function detectArea() {
@@ -576,6 +414,7 @@ function detectArea() {
 
       position.x >= area.minX &&
       position.x <= area.maxX &&
+
       position.z >= area.minZ &&
       position.z <= area.maxZ
 
@@ -618,13 +457,6 @@ function detectArea() {
   }
 
 }
-
-
-/* =====================================================
-   AREA POPUP
-===================================================== */
-
-let popupTimer = null;
 
 
 function showAreaPopup(
@@ -703,14 +535,53 @@ qualityButtons.forEach(
           button.dataset.quality;
 
 
+        const settings =
+          CONFIG.quality[
+            quality
+          ];
+
+
+        if (!settings) {
+
+          return;
+
+        }
+
+
+        renderer.setPixelRatio(
+
+          Math.min(
+
+            window.devicePixelRatio,
+
+            settings.pixelRatio
+
+          )
+
+        );
+
+
+        renderer.shadowMap.enabled =
+          settings.shadows;
+
+
+        scene.fog.density =
+          settings.fogDensity;
+
+
+        post.setQuality(
+          quality
+        );
+
+
+        post.resize();
+
+
         qualityButtons.forEach(
-          item => {
-
-            item.classList.remove(
+          element =>
+            element.classList.remove(
               "active"
-            );
-
-          }
+            )
         );
 
 
@@ -718,74 +589,11 @@ qualityButtons.forEach(
           "active"
         );
 
-
-        applyQuality(
-          quality
-        );
-
       }
     );
 
   }
 );
-
-
-function applyQuality(
-  quality
-) {
-
-  if (
-    !renderer ||
-    !post
-  ) {
-
-    return;
-
-  }
-
-
-  const settings =
-    CONFIG.quality[
-      quality
-    ];
-
-
-  if (!settings) {
-
-    return;
-
-  }
-
-
-  renderer.setPixelRatio(
-
-    Math.min(
-
-      window.devicePixelRatio,
-
-      settings.pixelRatio
-
-    )
-
-  );
-
-
-  renderer.shadowMap.enabled =
-    settings.shadows;
-
-
-  scene.fog.density =
-    settings.fogDensity;
-
-
-  post.setQuality(
-    quality
-  );
-
-
-  post.resize();
-
-}
 
 
 /* =====================================================
@@ -796,7 +604,7 @@ let fpsFrames =
   0;
 
 
-let fpsTime =
+let fpsStart =
   performance.now();
 
 
@@ -809,13 +617,10 @@ function updateFPS() {
     performance.now();
 
 
-  const elapsed =
-    now -
-    fpsTime;
-
-
   if (
-    elapsed < 500
+    now -
+    fpsStart <
+    500
   ) {
 
     return;
@@ -828,7 +633,10 @@ function updateFPS() {
 
       fpsFrames *
       1000 /
-      elapsed
+      (
+        now -
+        fpsStart
+      )
 
     );
 
@@ -851,7 +659,7 @@ function updateFPS() {
     0;
 
 
-  fpsTime =
+  fpsStart =
     now;
 
 }
@@ -874,21 +682,16 @@ window.addEventListener(
     camera.updateProjectionMatrix();
 
 
-    if (renderer) {
+    renderer.setSize(
 
-      renderer.setSize(
-        window.innerWidth,
-        window.innerHeight
-      );
+      window.innerWidth,
 
-    }
+      window.innerHeight
+
+    );
 
 
-    if (post) {
-
-      post.resize();
-
-    }
+    post.resize();
 
   }
 );
@@ -899,63 +702,113 @@ window.addEventListener(
 ===================================================== */
 
 function setLoading(
-  value,
-  message = ""
+  value
 ) {
 
-  const percent =
+  const element =
     document.getElementById(
       "loadingPercent"
     );
 
 
-  if (percent) {
+  if (element) {
 
-    percent.textContent =
+    element.textContent =
       `${value}%`;
 
   }
 
+}
 
-  /*
-    Existing loading title/text.
 
-    Works even if one of these
-    elements does not exist.
-  */
+/* =====================================================
+   ERROR
+===================================================== */
 
-  const textCandidates = [
+function showError(
+  error
+) {
 
+  const loading =
     document.getElementById(
-      "loadingText"
-    ),
-
-    document.querySelector(
-      "#loadingScreen .loading-text"
-    ),
-
-    document.querySelector(
-      "#loadingScreen p"
-    )
-
-  ];
+      "loadingScreen"
+    );
 
 
-  for (
-    const element of textCandidates
-  ) {
+  if (loading) {
 
-    if (element) {
-
-      element.textContent =
-        message;
-
-
-      break;
-
-    }
+    loading.style.display =
+      "none";
 
   }
+
+
+  let panel =
+    document.getElementById(
+      "fatalError"
+    );
+
+
+  if (!panel) {
+
+    panel =
+      document.createElement(
+        "div"
+      );
+
+
+    panel.id =
+      "fatalError";
+
+
+    Object.assign(
+      panel.style,
+      {
+
+        position:
+          "fixed",
+
+        inset:
+          "20px",
+
+        padding:
+          "20px",
+
+        zIndex:
+          "99999",
+
+        background:
+          "#250909",
+
+        color:
+          "#fff",
+
+        whiteSpace:
+          "pre-wrap",
+
+        fontFamily:
+          "monospace"
+
+      }
+    );
+
+
+    document.body.appendChild(
+      panel
+    );
+
+  }
+
+
+  panel.textContent =
+
+    "読み込みエラー\n\n" +
+
+    (
+      error?.stack ||
+      error?.message ||
+      String(error)
+    );
 
 }
 
@@ -975,16 +828,6 @@ function animate() {
   );
 
 
-  if (
-    !renderer ||
-    !post
-  ) {
-
-    return;
-
-  }
-
-
   const delta =
     Math.min(
       clock.getDelta(),
@@ -996,7 +839,13 @@ function animate() {
     clock.elapsedTime;
 
 
-  if (player) {
+  if (
+    player &&
+    !(
+      dialogueSystem &&
+      dialogueSystem.isOpen()
+    )
+  ) {
 
     player.update(
       delta
@@ -1005,7 +854,9 @@ function animate() {
   }
 
 
-  if (interactionSystem) {
+  if (
+    interactionSystem
+  ) {
 
     interactionSystem.update(
       delta,
@@ -1015,7 +866,9 @@ function animate() {
   }
 
 
-  if (world) {
+  if (
+    world
+  ) {
 
     updateWorld(
       delta,
