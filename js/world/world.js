@@ -45,44 +45,91 @@ import {
   createBuildingSystem
 } from "../buildings/buildingSystem.js";
 
+import {
+  createWetRoad
+} from "../effects/wetRoad.js";
+
 
 let animatedObjects = [];
 
 let crowdSystem = null;
+
 let vendorSystem = null;
+
+
+/*
+  Objects that can physically
+  support the player.
+*/
+
+const walkableObjects = [];
 
 
 /* =====================================================
    CREATE WORLD
 ===================================================== */
 
-export function createWorld(scene) {
+export function createWorld(
+  scene
+) {
 
   const colliders = [];
 
   const floorZones = [];
 
 
-  createLighting(scene);
+  createLighting(
+    scene
+  );
 
-  createGround(scene);
 
-  createDistricts(scene);
+  const ground =
+    createGround(
+      scene
+    );
 
 
   /*
-    Existing background buildings
+    If ground.js returns a mesh,
+    automatically register it.
+
+    Old ground.js versions that
+    return nothing still work.
   */
+
+  if (ground) {
+
+    if (
+      Array.isArray(ground)
+    ) {
+
+      walkableObjects.push(
+        ...ground
+      );
+
+    }
+
+    else {
+
+      walkableObjects.push(
+        ground
+      );
+
+    }
+
+  }
+
+
+  createDistricts(
+    scene
+  );
+
 
   createBuildings(
     scene,
     colliders
   );
 
-
-  /*
-    New explorable buildings
-  */
 
   createBuildingSystem(
     scene,
@@ -96,30 +143,76 @@ export function createWorld(scene) {
     colliders
   );
 
+
   animatedObjects =
-    createNeon(scene);
+    createNeon(
+      scene
+    );
 
-  createProps(scene);
 
-  createAtmosphere(scene);
+  createProps(
+    scene
+  );
+
+
+  createWetRoad(
+    scene
+  );
+
+
+  createAtmosphere(
+    scene
+  );
+
+
+  crowdSystem =
+    createCrowd(
+      scene
+    );
+
+
+  vendorSystem =
+    createVendors(
+      scene
+    );
 
 
   /*
-    PEOPLE
+    Find explicitly marked
+    walkable meshes.
+
+    This lets future buildings
+    opt into Raycaster movement
+    simply with:
+
+    mesh.userData.walkable = true;
   */
 
-  crowdSystem =
-    createCrowd(scene);
+  scene.traverse(
+    object => {
 
-  vendorSystem =
-    createVendors(scene);
+      if (
+        object.isMesh &&
+        object.userData.walkable
+      ) {
+
+        walkableObjects.push(
+          object
+        );
+
+      }
+
+    }
+  );
 
 
   return {
 
     colliders,
 
-    floorZones
+    floorZones,
+
+    walkableObjects
 
   };
 
@@ -127,7 +220,7 @@ export function createWorld(scene) {
 
 
 /* =====================================================
-   UPDATE WORLD
+   UPDATE
 ===================================================== */
 
 export function updateWorld(
@@ -142,10 +235,6 @@ export function updateWorld(
     camera
   );
 
-
-  /*
-    Neon
-  */
 
   for (
     const object of
@@ -170,10 +259,6 @@ export function updateWorld(
   }
 
 
-  /*
-    Crowd
-  */
-
   if (
     crowdSystem
   ) {
@@ -187,10 +272,6 @@ export function updateWorld(
 
   }
 
-
-  /*
-    Vendors
-  */
 
   if (
     vendorSystem
