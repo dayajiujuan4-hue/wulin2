@@ -8,14 +8,9 @@ export function createDialogueSystem() {
   let activeNPC =
     null;
 
-
   let currentNode =
     null;
 
-
-  /*
-    Overlay
-  */
 
   const overlay =
     document.createElement(
@@ -23,29 +18,36 @@ export function createDialogueSystem() {
     );
 
 
-  overlay.style.position =
-    "fixed";
+  Object.assign(
+    overlay.style,
+    {
 
-  overlay.style.left =
-    "0";
+      position:
+        "fixed",
 
-  overlay.style.right =
-    "0";
+      left:
+        "0",
 
-  overlay.style.bottom =
-    "0";
+      right:
+        "0",
 
-  overlay.style.padding =
-    "0 20px 28px";
+      bottom:
+        "0",
 
-  overlay.style.display =
-    "none";
+      padding:
+        "0 20px 28px",
 
-  overlay.style.zIndex =
-    "1000";
+      display:
+        "none",
 
-  overlay.style.pointerEvents =
-    "none";
+      zIndex:
+        "10000",
+
+      pointerEvents:
+        "none"
+
+    }
+  );
 
 
   document.body.appendChild(
@@ -53,39 +55,42 @@ export function createDialogueSystem() {
   );
 
 
-  /*
-    Dialogue panel
-  */
-
   const panel =
     document.createElement(
       "div"
     );
 
 
-  panel.style.maxWidth =
-    "820px";
+  Object.assign(
+    panel.style,
+    {
 
-  panel.style.margin =
-    "0 auto";
+      maxWidth:
+        "820px",
 
-  panel.style.padding =
-    "22px 24px";
+      margin:
+        "0 auto",
 
-  panel.style.background =
-    "rgba(8, 12, 18, 0.93)";
+      padding:
+        "22px 24px",
 
-  panel.style.border =
-    "1px solid rgba(255,255,255,0.18)";
+      background:
+        "rgba(8,12,18,.95)",
 
-  panel.style.borderRadius =
-    "12px";
+      border:
+        "1px solid rgba(255,255,255,.18)",
 
-  panel.style.boxShadow =
-    "0 15px 50px rgba(0,0,0,0.55)";
+      borderRadius:
+        "12px",
 
-  panel.style.backdropFilter =
-    "blur(10px)";
+      boxShadow:
+        "0 15px 50px rgba(0,0,0,.6)",
+
+      color:
+        "#fff"
+
+    }
+  );
 
 
   overlay.appendChild(
@@ -123,11 +128,11 @@ export function createDialogueSystem() {
   role.style.fontSize =
     "12px";
 
+  role.style.opacity =
+    ".6";
+
   role.style.marginTop =
     "3px";
-
-  role.style.opacity =
-    "0.58";
 
 
   panel.appendChild(
@@ -150,9 +155,6 @@ export function createDialogueSystem() {
   text.style.marginTop =
     "14px";
 
-  text.style.color =
-    "#f5f5f5";
-
 
   panel.appendChild(
     text
@@ -165,9 +167,6 @@ export function createDialogueSystem() {
     );
 
 
-  choices.style.marginTop =
-    "18px";
-
   choices.style.display =
     "flex";
 
@@ -177,28 +176,21 @@ export function createDialogueSystem() {
   choices.style.gap =
     "8px";
 
+  choices.style.marginTop =
+    "18px";
+
 
   panel.appendChild(
     choices
   );
 
 
-  /* =====================================================
-     START
-  ===================================================== */
-
   function start(
     npc
   ) {
 
-    const dialogue =
-      DIALOGUES[
-        npc.id
-      ];
-
-
     if (
-      !dialogue
+      !DIALOGUES[npc.id]
     ) {
 
       return;
@@ -214,20 +206,6 @@ export function createDialogueSystem() {
       "start";
 
 
-    /*
-      Pointer lock must be released
-      so choices can be clicked.
-  */
-
-    if (
-      document.pointerLockElement
-    ) {
-
-      document.exitPointerLock();
-
-    }
-
-
     overlay.style.display =
       "block";
 
@@ -238,12 +216,25 @@ export function createDialogueSystem() {
 
     render();
 
+
+    /*
+      Important:
+      render first, then unlock.
+
+      main.js can now see
+      isOpen() === true.
+    */
+
+    if (
+      document.pointerLockElement
+    ) {
+
+      document.exitPointerLock();
+
+    }
+
   }
 
-
-  /* =====================================================
-     RENDER
-  ===================================================== */
 
   function render() {
 
@@ -280,9 +271,7 @@ export function createDialogueSystem() {
       ];
 
 
-    if (
-      !node
-    ) {
+    if (!node) {
 
       close();
 
@@ -303,108 +292,83 @@ export function createDialogueSystem() {
 
 
     text.textContent =
-      node.text;
+      node.text ||
+      "";
 
 
     choices.innerHTML =
       "";
 
 
-    const nodeChoices =
-      node.choices ||
-      [];
+    for (
+      const choice of
+      node.choices || []
+    ) {
 
-
-    nodeChoices.forEach(
-      (
-        choice,
-        index
-      ) => {
-
-        const button =
-          document.createElement(
-            "button"
-          );
-
-
-        button.textContent =
-          `${index + 1}. ${choice.text}`;
-
-
-        button.style.padding =
-          "11px 14px";
-
-        button.style.background =
-          "rgba(255,255,255,0.07)";
-
-        button.style.border =
-          "1px solid rgba(255,255,255,0.12)";
-
-        button.style.borderRadius =
-          "7px";
-
-        button.style.color =
-          "#ffffff";
-
-        button.style.fontSize =
-          "15px";
-
-        button.style.textAlign =
-          "left";
-
-        button.style.cursor =
-          "pointer";
-
-
-        button.addEventListener(
-          "mouseenter",
-          () => {
-
-            button.style.background =
-              "rgba(255,214,107,0.18)";
-
-          }
+      const button =
+        document.createElement(
+          "button"
         );
 
 
-        button.addEventListener(
-          "mouseleave",
-          () => {
-
-            button.style.background =
-              "rgba(255,255,255,0.07)";
-
-          }
-        );
+      button.textContent =
+        choice.text;
 
 
-        button.addEventListener(
-          "click",
-          () => {
+      Object.assign(
+        button.style,
+        {
 
-            currentNode =
-              choice.next;
+          padding:
+            "12px 14px",
+
+          background:
+            "rgba(255,255,255,.07)",
+
+          border:
+            "1px solid rgba(255,255,255,.13)",
+
+          borderRadius:
+            "7px",
+
+          color:
+            "#fff",
+
+          textAlign:
+            "left",
+
+          cursor:
+            "pointer",
+
+          fontSize:
+            "15px"
+
+        }
+      );
 
 
-            render();
+      button.addEventListener(
+        "click",
+        () => {
 
-          }
-        );
+          currentNode =
+            choice.next;
 
 
-        choices.appendChild(
-          button
-        );
+          render();
 
-      }
-    );
+        }
+      );
+
+
+      choices.appendChild(
+        button
+      );
+
+    }
 
   }
 
-
-  /* =====================================================
-     CLOSE
-  ===================================================== */
 
   function close() {
 
