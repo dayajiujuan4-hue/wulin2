@@ -1,34 +1,20 @@
 import * as THREE from "three";
 
 
-/* =====================================================
-   TEXT TEXTURE
-===================================================== */
-
-function textTexture(
+function createTextTexture(
   text,
-  color = "#ff4c67",
-  background = "rgba(0,0,0,0)"
+  color = "#ffffff",
+  glow = "#ff3366"
 ) {
 
   const canvas =
-    document.createElement(
-      "canvas"
-    );
+    document.createElement("canvas");
 
-
-  canvas.width =
-    1024;
-
-  canvas.height =
-    300;
-
+  canvas.width = 1024;
+  canvas.height = 256;
 
   const ctx =
-    canvas.getContext(
-      "2d"
-    );
-
+    canvas.getContext("2d");
 
   ctx.clearRect(
     0,
@@ -37,66 +23,35 @@ function textTexture(
     canvas.height
   );
 
-
-  ctx.fillStyle =
-    background;
-
-
-  ctx.fillRect(
-    0,
-    0,
-    canvas.width,
-    canvas.height
-  );
-
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
 
   ctx.font =
-    "bold 125px sans-serif";
+    "bold 120px sans-serif";
 
+  ctx.shadowColor = glow;
+  ctx.shadowBlur = 35;
 
-  ctx.textAlign =
-    "center";
-
-  ctx.textBaseline =
-    "middle";
-
-
-  ctx.shadowColor =
-    color;
-
-  ctx.shadowBlur =
-    35;
-
-
-  ctx.fillStyle =
-    color;
-
+  ctx.fillStyle = color;
 
   ctx.fillText(
     text,
-    canvas.width / 2,
-    canvas.height / 2
+    512,
+    128
   );
-
 
   const texture =
     new THREE.CanvasTexture(
       canvas
     );
 
-
   texture.colorSpace =
     THREE.SRGBColorSpace;
-
 
   return texture;
 
 }
 
-
-/* =====================================================
-   CREATE SIGN
-===================================================== */
 
 function createSign(
   scene,
@@ -104,38 +59,36 @@ function createSign(
   x,
   y,
   z,
-  rotationY,
   width,
   height,
-  color
+  rotationY = 0,
+  glow = "#ff3366"
 ) {
 
   const texture =
-    textTexture(
+    createTextTexture(
       text,
-      color
+      "#ffffff",
+      glow
     );
-
 
   const material =
     new THREE.MeshBasicMaterial({
 
-      map:
-        texture,
+      map: texture,
 
-      transparent:
-        true,
+      transparent: true,
 
-      side:
-        THREE.DoubleSide,
+      depthWrite: false,
 
-      depthWrite:
-        false
+      side: THREE.DoubleSide,
+
+      toneMapped: false
 
     });
 
 
-  const sign =
+  const mesh =
     new THREE.Mesh(
 
       new THREE.PlaneGeometry(
@@ -148,41 +101,129 @@ function createSign(
     );
 
 
-  sign.position.set(
+  mesh.position.set(
     x,
     y,
     z
   );
 
-
-  sign.rotation.y =
+  mesh.rotation.y =
     rotationY;
 
 
   scene.add(
-    sign
+    mesh
   );
 
 
-  return sign;
+  return mesh;
 
 }
 
-
-/* =====================================================
-   CREATE NEON
-===================================================== */
 
 export function createNeon(
   scene
 ) {
 
-  const animated = [];
+  const objects = [];
 
 
-  /* ===================================================
-     WULIN WALL
-  =================================================== */
+  objects.push(
+
+    createSign(
+      scene,
+      "武林夜市",
+      0,
+      5,
+      17.8,
+      8,
+      2
+    )
+
+  );
+
+
+  objects.push(
+
+    createSign(
+      scene,
+      "杭州味道",
+      -12.8,
+      3.8,
+      -14,
+      4,
+      1.1,
+      Math.PI / 2,
+      "#ff8738"
+    )
+
+  );
+
+
+  objects.push(
+
+    createSign(
+      scene,
+      "夜生活",
+      12.8,
+      4,
+      -37,
+      4,
+      1.1,
+      -Math.PI / 2,
+      "#38aaff"
+    )
+
+  );
+
+
+  objects.push(
+
+    createSign(
+      scene,
+      "武林美食",
+      -27,
+      4,
+      -78,
+      5,
+      1.3,
+      0,
+      "#ff5a3d"
+    )
+
+  );
+
+
+  objects.push(
+
+    createSign(
+      scene,
+      "杭州文创",
+      0,
+      4,
+      -112,
+      5,
+      1.3,
+      0,
+      "#ff61b7"
+    )
+
+  );
+
+
+  /*
+    WULIN wall
+  */
+
+  const wallMaterial =
+    new THREE.MeshStandardMaterial({
+
+      color: 0x171a22,
+
+      roughness: 0.7
+
+    });
+
 
   const wall =
     new THREE.Mesh(
@@ -193,15 +234,7 @@ export function createNeon(
         12
       ),
 
-      new THREE.MeshStandardMaterial({
-
-        color:
-          0x17151b,
-
-        roughness:
-          0.8
-
-      })
+      wallMaterial
 
     );
 
@@ -218,230 +251,33 @@ export function createNeon(
   );
 
 
-  createSign(
-    scene,
-    "WULIN",
-    38.78,
-    4.5,
-    -66,
-    -Math.PI / 2,
-    8,
-    2.4,
-    "#ff4e8b"
+  objects.push(
+
+    createSign(
+      scene,
+      "WULIN",
+      38.78,
+      4.5,
+      -66,
+      8,
+      2.4,
+      -Math.PI / 2,
+      "#ff39c8"
+    )
+
   );
 
 
-  /* ===================================================
-     ENTRANCE
-  =================================================== */
+  /*
+    Decorative neon rings
+  */
 
-  createSign(
-    scene,
-    "武林夜市",
-    0,
-    5,
-    17.8,
-    0,
-    6.5,
-    1.7,
-    "#ffbe4f"
-  );
+  const colors = [
 
+    0xff3cac,
+    0x3caaff,
+    0xff9448
 
-  /* ===================================================
-     MAIN STREET SIGNS
-  =================================================== */
-
-  createSign(
-    scene,
-    "杭州味道",
-    -11.3,
-    4.1,
-    -4,
-    Math.PI / 2,
-    4,
-    1.15,
-    "#ff4e45"
-  );
-
-
-  createSign(
-    scene,
-    "茶",
-    11.3,
-    4.6,
-    -13,
-    -Math.PI / 2,
-    1.5,
-    1.5,
-    "#55d7ff"
-  );
-
-
-  createSign(
-    scene,
-    "小吃",
-    -11.3,
-    3.8,
-    -27,
-    Math.PI / 2,
-    3.1,
-    1.1,
-    "#ffb13b"
-  );
-
-
-  createSign(
-    scene,
-    "夜生活",
-    11.3,
-    5,
-    -39,
-    -Math.PI / 2,
-    4,
-    1.1,
-    "#ff4bca"
-  );
-
-
-  /* ===================================================
-     FOOD ALLEY
-  =================================================== */
-
-  createSign(
-    scene,
-    "武林美食",
-    -16,
-    4.5,
-    -58,
-    0,
-    4.5,
-    1.3,
-    "#ff5b3f"
-  );
-
-
-  createSign(
-    scene,
-    "烧烤",
-    -28,
-    3.8,
-    -59,
-    0,
-    2.5,
-    1,
-    "#ff9f3f"
-  );
-
-
-  createSign(
-    scene,
-    "小龙虾",
-    -35,
-    4.3,
-    -68,
-    Math.PI / 2,
-    3.5,
-    1.1,
-    "#ff3e55"
-  );
-
-
-  /* ===================================================
-     CREATIVE DISTRICT
-  =================================================== */
-
-  createSign(
-    scene,
-    "杭州文创",
-    -5,
-    4.4,
-    -84,
-    0,
-    4,
-    1.2,
-    "#45cfff"
-  );
-
-
-  createSign(
-    scene,
-    "手作",
-    8,
-    4.1,
-    -98,
-    -Math.PI / 2,
-    2.4,
-    1,
-    "#d576ff"
-  );
-
-
-  createSign(
-    scene,
-    "原创设计",
-    -8,
-    4.5,
-    -108,
-    Math.PI / 2,
-    3.8,
-    1,
-    "#59f0c2"
-  );
-
-
-  /* ===================================================
-     BACK ALLEY
-  =================================================== */
-
-  createSign(
-    scene,
-    "武林小馆",
-    19.4,
-    3.8,
-    -20,
-    Math.PI / 2,
-    3.4,
-    1,
-    "#ff6a42"
-  );
-
-
-  createSign(
-    scene,
-    "面馆",
-    31,
-    3.6,
-    -10,
-    -Math.PI / 2,
-    2.3,
-    1,
-    "#ffbd55"
-  );
-
-
-  createSign(
-    scene,
-    "便利店",
-    31,
-    4,
-    -36,
-    -Math.PI / 2,
-    3.2,
-    1,
-    "#4ccfff"
-  );
-
-
-  /* ===================================================
-     DECORATIVE NEON RINGS
-  =================================================== */
-
-  const neonColors = [
-    0xff3c84,
-    0x35bfff,
-    0xffa53c,
-    0x6affd0
   ];
 
 
@@ -451,26 +287,24 @@ export function createNeon(
     i++
   ) {
 
-    const color =
-      neonColors[
-        i %
-        neonColors.length
-      ];
-
-
     const material =
       new THREE.MeshStandardMaterial({
 
-        color,
+        color:
+          colors[
+            i % colors.length
+          ],
 
         emissive:
-          color,
+          colors[
+            i % colors.length
+          ],
 
         emissiveIntensity:
-          2.2,
+          2.3,
 
         roughness:
-          0.35
+          0.4
 
       });
 
@@ -479,9 +313,8 @@ export function createNeon(
       new THREE.Mesh(
 
         new THREE.TorusGeometry(
-          0.25 +
-          Math.random() * 0.22,
-          0.035,
+          0.32,
+          0.045,
           6,
           16
         ),
@@ -493,13 +326,14 @@ export function createNeon(
 
     ring.position.set(
 
-      37.8,
+      38.5,
 
-      1.5 +
-      Math.random() * 4,
+      1.3 +
+      (i % 6) * 0.8,
 
-      -71 +
-      Math.random() * 10
+      -70 +
+      Math.floor(i / 6) *
+      4
 
     );
 
@@ -509,17 +343,17 @@ export function createNeon(
 
 
     ring.userData.base =
-      2.2;
+      2.3;
 
 
     ring.userData.speed =
-      1 +
-      Math.random() * 2;
+      0.8 +
+      (i % 5) *
+      0.17;
 
 
     ring.userData.phase =
-      Math.random() *
-      Math.PI * 2;
+      i * 0.65;
 
 
     scene.add(
@@ -527,59 +361,91 @@ export function createNeon(
     );
 
 
-    animated.push(
+    objects.push(
       ring
     );
 
   }
 
 
-  /* ===================================================
-     PLAZA REAL LIGHTS
-  =================================================== */
+  return objects;
 
-  const pink =
-    new THREE.PointLight(
-      0xff3f91,
-      9,
-      18,
-      2
-    );
+}
 
 
-  pink.position.set(
-    33,
-    4,
-    -62
-  );
+/*
+  ★ 今回ここを正式に定義する。
+
+  world.js と neon.js の
+  import/export が一致する。
+*/
+
+export function updateNeon(
+  objects,
+  time
+) {
+
+  if (
+    !Array.isArray(objects)
+  ) {
+
+    return;
+
+  }
 
 
-  scene.add(
-    pink
-  );
+  for (
+    const object of objects
+  ) {
+
+    if (
+      !object ||
+      !object.material
+    ) {
+
+      continue;
+
+    }
 
 
-  const blue =
-    new THREE.PointLight(
-      0x36aaff,
-      8,
-      18,
-      2
-    );
+    if (
+      !(
+        "emissiveIntensity"
+        in object.material
+      )
+    ) {
+
+      continue;
+
+    }
 
 
-  blue.position.set(
-    25,
-    4,
-    -69
-  );
+    const base =
+      object.userData.base ??
+      2.2;
 
 
-  scene.add(
-    blue
-  );
+    const speed =
+      object.userData.speed ??
+      1;
 
 
-  return animated;
+    const phase =
+      object.userData.phase ??
+      0;
+
+
+    object.material.emissiveIntensity =
+
+      base +
+
+      Math.sin(
+        time * speed +
+        phase
+      ) *
+
+      0.3;
+
+  }
 
 }
