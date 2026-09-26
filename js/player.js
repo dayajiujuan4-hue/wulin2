@@ -4,11 +4,31 @@ import {
   CONFIG
 } from "./config.js";
 
+
 export function createPlayer(
   camera,
-  element,
-  colliders
+  domElement,
+  colliders = [],
+  floorZones = []
 ) {
+
+  /* ===================================================
+     STATE
+  =================================================== */
+
+  const keys = {};
+
+
+  let yaw =
+    0;
+
+  let pitch =
+    0;
+
+
+  let currentFloorHeight =
+    0;
+
 
   camera.position.set(
     0,
@@ -16,33 +36,38 @@ export function createPlayer(
     22
   );
 
-  const keys = {};
 
-  let yaw = 0;
-  let pitch = 0;
-  let walkTime = 0;
+  /* ===================================================
+     KEYBOARD
+  =================================================== */
 
-  document.addEventListener(
+  window.addEventListener(
     "keydown",
     event => {
 
       keys[
-        event.key.toLowerCase()
+        event.code
       ] = true;
 
     }
   );
 
-  document.addEventListener(
+
+  window.addEventListener(
     "keyup",
     event => {
 
       keys[
-        event.key.toLowerCase()
+        event.code
       ] = false;
 
     }
   );
+
+
+  /* ===================================================
+     MOUSE
+  =================================================== */
 
   document.addEventListener(
     "mousemove",
@@ -50,55 +75,106 @@ export function createPlayer(
 
       if (
         document.pointerLockElement !==
-        element
-      ) return;
+        domElement
+      ) {
+
+        return;
+
+      }
+
 
       yaw -=
+
         event.movementX *
-        .002;
+        0.002;
+
 
       pitch -=
+
         event.movementY *
-        .002;
+        0.002;
+
 
       pitch =
-        THREE.MathUtils.clamp(
-          pitch,
-          -1.35,
-          1.35
+        Math.max(
+
+          -1.45,
+
+          Math.min(
+            1.45,
+            pitch
+          )
+
         );
 
     }
   );
 
 
-  const forward =
-    new THREE.Vector3();
-
-  const right =
-    new THREE.Vector3();
-
-  const movement =
-    new THREE.Vector3();
-
+  /* ===================================================
+     COLLISION
+  =================================================== */
 
   function collides(
     x,
     z
   ) {
 
-    const r =
+    const radius =
       CONFIG.player.radius;
 
+
     for (
-      const box of colliders
+      const collider of
+      colliders
     ) {
 
+      const nearestX =
+        Math.max(
+
+          collider.minX,
+
+          Math.min(
+            x,
+            collider.maxX
+          )
+
+        );
+
+
+      const nearestZ =
+        Math.max(
+
+          collider.minZ,
+
+          Math.min(
+            z,
+            collider.maxZ
+          )
+
+        );
+
+
+      const dx =
+        x -
+        nearestX;
+
+
+      const dz =
+        z -
+        nearestZ;
+
+
       if (
-        x + r > box.minX &&
-        x - r < box.maxX &&
-        z + r > box.minZ &&
-        z - r < box.maxZ
+
+        dx * dx +
+        dz * dz
+
+        <
+
+        radius *
+        radius
+
       ) {
 
         return true;
@@ -107,142 +183,369 @@ export function createPlayer(
 
     }
 
+
     return false;
 
   }
 
 
+  /* ===================================================
+     FLOOR HEIGHT
+  =================================================== */
+
+  function getFloorHeight(
+    x,
+    z,
+    currentY
+  ) {
+
+    let bestHeight =
+      0;
+
+
+    let bestDifference =
+      Infinity;
+
+
+    for (
+      const zone of
+      floorZones
+    ) {
+
+      if (
+
+        x >= zone.minX &&
+        x <= zone.maxX &&
+
+        z >= zone.minZ &&
+        z <= zone.maxZ
+
+      ) {
+
+        const difference =
+
+          Math.abs(
+
+            zone.height -
+            currentY
+
+          );
+
+
+        /*
+          Prevent teleporting from
+          ground directly to second floor.
+  */
+
+        if (
+
+          difference <
+          0.65 &&
+
+          difference <
+          bestDifference
+
+        ) {
+
+          bestHeight =
+            zone.height;
+
+
+          bestDifference =
+            difference;
+
+        }
+
+      }
+
+    }
+
+
+    return bestHeight;
+
+  }
+
+
+  /* ===================================================
+     UPDATE
+  =================================================== */
+
   function update(
     delta
   ) {
 
+    /*
+      Camera rotation
+  */
+
     camera.rotation.order =
       "YXZ";
+
 
     camera.rotation.y =
       yaw;
 
+
     camera.rotation.x =
       pitch;
 
-    camera.getWorldDirection(
-      forward
-    );
 
-    forward.y = 0;
-    forward.normalize();
+    /* =================================================
+       MOVEMENT INPUT
+    ================================================= */
 
-    right.set(
-      forward.z,
-      0,
-      -forward.x
-    );
+    let inputX =
+      0;
 
-    movement.set(
-      0,
-      0,
-      0
-    );
-
-    if (keys["w"])
-      movement.add(forward);
-
-    if (keys["s"])
-      movement.sub(forward);
-
-    if (keys["d"])
-      movement.add(right);
-
-    if (keys["a"])
-      movement.sub(right);
+    let inputZ =
+      0;
 
 
-    const moving =
-      movement.lengthSq() > 0;
+    if (
+      keys["KeyW"]
+    ) {
 
-    if (moving) {
-
-      movement.normalize();
-
-      const speed =
-
-        keys["shift"]
-
-        ? CONFIG.player.runSpeed
-
-        : CONFIG.player.speed;
-
-      const amount =
-        speed * delta;
-
-      const nextX =
-        camera.position.x +
-        movement.x *
-        amount;
-
-      const nextZ =
-        camera.position.z +
-        movement.z *
-        amount;
-
-
-      /*
-        X/Z separately.
-        This lets the player slide along walls.
-      */
-
-      if (
-        !collides(
-          nextX,
-          camera.position.z
-        )
-      ) {
-
-        camera.position.x =
-          nextX;
-
-      }
-
-      if (
-        !collides(
-          camera.position.x,
-          nextZ
-        )
-      ) {
-
-        camera.position.z =
-          nextZ;
-
-      }
-
-
-      walkTime +=
-        delta *
-        (
-          keys["shift"]
-          ? 11
-          : 8
-        );
-
-      camera.position.y =
-        CONFIG.player.height +
-        Math.sin(
-          walkTime
-        ) *
-        .018;
+      inputZ -=
+        1;
 
     }
 
-    else {
+
+    if (
+      keys["KeyS"]
+    ) {
+
+      inputZ +=
+        1;
+
+    }
+
+
+    if (
+      keys["KeyA"]
+    ) {
+
+      inputX -=
+        1;
+
+    }
+
+
+    if (
+      keys["KeyD"]
+    ) {
+
+      inputX +=
+        1;
+
+    }
+
+
+    const length =
+      Math.hypot(
+        inputX,
+        inputZ
+      );
+
+
+    if (
+      length >
+      0
+    ) {
+
+      inputX /=
+        length;
+
+      inputZ /=
+        length;
+
+    }
+
+
+    /* =================================================
+       DIRECTION
+    ================================================= */
+
+    const forwardX =
+      -Math.sin(
+        yaw
+      );
+
+
+    const forwardZ =
+      -Math.cos(
+        yaw
+      );
+
+
+    const rightX =
+      Math.cos(
+        yaw
+      );
+
+
+    const rightZ =
+      -Math.sin(
+        yaw
+      );
+
+
+    const moveX =
+
+      forwardX *
+      -inputZ +
+
+      rightX *
+      inputX;
+
+
+    const moveZ =
+
+      forwardZ *
+      -inputZ +
+
+      rightZ *
+      inputX;
+
+
+    /* =================================================
+       SPEED
+    ================================================= */
+
+    const running =
+
+      keys["ShiftLeft"] ||
+      keys["ShiftRight"];
+
+
+    const speed =
+
+      running
+
+        ? CONFIG.player.runSpeed
+        : CONFIG.player.speed;
+
+
+    const step =
+      speed *
+      delta;
+
+
+    /* =================================================
+       X COLLISION
+    ================================================= */
+
+    const nextX =
+
+      camera.position.x +
+
+      moveX *
+      step;
+
+
+    if (
+      !collides(
+        nextX,
+        camera.position.z
+      )
+    ) {
+
+      camera.position.x =
+        nextX;
+
+    }
+
+
+    /* =================================================
+       Z COLLISION
+    ================================================= */
+
+    const nextZ =
+
+      camera.position.z +
+
+      moveZ *
+      step;
+
+
+    if (
+      !collides(
+        camera.position.x,
+        nextZ
+      )
+    ) {
+
+      camera.position.z =
+        nextZ;
+
+    }
+
+
+    /* =================================================
+       FLOOR / STAIRS
+    ================================================= */
+
+    const targetFloor =
+
+      getFloorHeight(
+
+        camera.position.x,
+
+        camera.position.z,
+
+        currentFloorHeight
+
+      );
+
+
+    /*
+      Smooth vertical movement.
+  */
+
+    currentFloorHeight =
+
+      THREE.MathUtils.lerp(
+
+        currentFloorHeight,
+
+        targetFloor,
+
+        Math.min(
+          1,
+          delta * 12
+        )
+
+      );
+
+
+    camera.position.y =
+
+      CONFIG.player.height +
+
+      currentFloorHeight;
+
+
+    /* =================================================
+       WALK BOB
+    ================================================= */
+
+    if (
+      length >
+      0
+    ) {
+
+      const time =
+        performance.now() *
+        0.009;
+
 
       camera.position.y +=
 
-        (
-          CONFIG.player.height -
-          camera.position.y
-        )
+        Math.sin(
+          time
+        ) *
 
-        * .15;
+        0.015;
 
     }
 
