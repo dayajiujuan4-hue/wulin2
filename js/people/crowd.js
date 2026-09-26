@@ -1,5 +1,3 @@
-import * as THREE from "three";
-
 import {
   createNPC,
   animateNPC,
@@ -16,17 +14,9 @@ import {
 } from "./behaviors.js";
 
 
-/*
-=====================================================
-SETTINGS
-=====================================================
-
-最初は約55人。
-
-後で増減しやすいように
-ここだけで人数を管理する。
-=====================================================
-*/
+/* =====================================================
+   POPULATION
+===================================================== */
 
 const POPULATION = {
 
@@ -49,15 +39,18 @@ const POPULATION = {
 };
 
 
-/*
-=====================================================
-CREATE CROWD
-=====================================================
-*/
+/* =====================================================
+   CREATE CROWD
+===================================================== */
 
 export function createCrowd(
   scene
 ) {
+
+  console.log(
+    "武林夜市：群衆システム起動"
+  );
+
 
   const system = {
 
@@ -72,9 +65,9 @@ export function createCrowd(
   };
 
 
-  /*
-    WALKERS
-  */
+  /* ===================================================
+     WALKERS
+  =================================================== */
 
   createWalkers(
     scene,
@@ -84,6 +77,7 @@ export function createCrowd(
     "main"
   );
 
+
   createWalkers(
     scene,
     system,
@@ -91,6 +85,7 @@ export function createCrowd(
     POPULATION.walkersSquare,
     "square"
   );
+
 
   createWalkers(
     scene,
@@ -100,6 +95,7 @@ export function createCrowd(
     "food"
   );
 
+
   createWalkers(
     scene,
     system,
@@ -107,6 +103,7 @@ export function createCrowd(
     POPULATION.walkersCreative,
     "creative"
   );
+
 
   createWalkers(
     scene,
@@ -117,9 +114,9 @@ export function createCrowd(
   );
 
 
-  /*
-    SHOPPERS
-  */
+  /* ===================================================
+     SHOPPERS
+  =================================================== */
 
   for (
     let i = 0;
@@ -136,9 +133,9 @@ export function createCrowd(
   }
 
 
-  /*
-    PHOTO PEOPLE
-  */
+  /* ===================================================
+     PHOTO PEOPLE
+  =================================================== */
 
   for (
     let i = 0;
@@ -155,9 +152,9 @@ export function createCrowd(
   }
 
 
-  /*
-    SEATED
-  */
+  /* ===================================================
+     SEATED PEOPLE
+  =================================================== */
 
   for (
     let i = 0;
@@ -174,16 +171,31 @@ export function createCrowd(
   }
 
 
+  const total =
+
+    system.walkers.length +
+
+    system.shoppers.length +
+
+    system.photoPeople.length +
+
+    system.seatedPeople.length;
+
+
+  console.log(
+    "一般客生成数:",
+    total
+  );
+
+
   return system;
 
 }
 
 
-/*
-=====================================================
-WALKERS
-=====================================================
-*/
+/* =====================================================
+   CREATE WALKERS
+===================================================== */
 
 function createWalkers(
   scene,
@@ -204,6 +216,7 @@ function createWalkers(
 
 
     const pointIndex =
+
       Math.floor(
         Math.random() *
         path.length
@@ -211,6 +224,7 @@ function createWalkers(
 
 
     const position =
+
       positionOnPath(
         path,
         pointIndex
@@ -232,21 +246,27 @@ function createWalkers(
       path,
 
       targetIndex:
+
         (
           pointIndex + 1
         ) %
+
         path.length,
 
       direction:
+
         Math.random() >
-        .5
+        0.5
+
           ? 1
           : -1,
 
       speed:
-        .65 +
+
+        0.65 +
+
         Math.random() *
-        .55,
+        0.55,
 
       pause:
         0
@@ -268,11 +288,9 @@ function createWalkers(
 }
 
 
-/*
-=====================================================
-SHOPPERS
-=====================================================
-*/
+/* =====================================================
+   CREATE SHOPPER
+===================================================== */
 
 function createShopper(
   scene,
@@ -285,18 +303,24 @@ function createShopper(
 
 
   const spot =
+
     SHOPPING_SPOTS[
+
       index %
+
       SHOPPING_SPOTS.length
+
     ];
 
 
   npc.position.set(
 
     spot.x +
+
     (
       Math.random() >
-      .5
+      0.5
+
         ? -2.5
         : 2.5
     ),
@@ -304,10 +328,13 @@ function createShopper(
     0,
 
     spot.z +
+
     (
       Math.random() -
-      .5
-    ) * 3
+      0.5
+    ) *
+
+    3
 
   );
 
@@ -327,9 +354,11 @@ function createShopper(
       0,
 
     speed:
-      .65 +
+
+      0.65 +
+
       Math.random() *
-      .3
+      0.3
 
   };
 
@@ -346,11 +375,9 @@ function createShopper(
 }
 
 
-/*
-=====================================================
-PHOTO PEOPLE
-=====================================================
-*/
+/* =====================================================
+   CREATE PHOTO PERSON
+===================================================== */
 
 function createPhotoPerson(
   scene,
@@ -365,9 +392,13 @@ function createPhotoPerson(
 
 
   const spot =
+
     PHOTO_SPOTS[
+
       index %
+
       PHOTO_SPOTS.length
+
     ];
 
 
@@ -377,7 +408,7 @@ function createPhotoPerson(
 
 
   /*
-    Face WULIN wall.
+    WULIN wall direction
   */
 
   npc.rotation.y =
@@ -385,14 +416,14 @@ function createPhotoPerson(
 
 
   /*
-    Raise arms a little.
+    Raise arms
   */
 
   npc.userData.leftArm.rotation.x =
-    -1.15;
+    -1.05;
 
   npc.userData.rightArm.rotation.x =
-    -1.15;
+    -1.05;
 
 
   npc.userData.behavior = {
@@ -401,6 +432,7 @@ function createPhotoPerson(
       "photo",
 
     phase:
+
       Math.random() *
       10
 
@@ -419,11 +451,9 @@ function createPhotoPerson(
 }
 
 
-/*
-=====================================================
-SEATED PEOPLE
-=====================================================
-*/
+/* =====================================================
+   CREATE SEATED PERSON
+===================================================== */
 
 function createSeatedPerson(
   scene,
@@ -436,9 +466,13 @@ function createSeatedPerson(
 
 
   const spot =
+
     SEAT_SPOTS[
+
       index %
+
       SEAT_SPOTS.length
+
     ];
 
 
@@ -448,25 +482,27 @@ function createSeatedPerson(
 
 
   /*
-    Fake sitting pose.
+    Lower body for sitting pose
   */
 
   npc.position.y =
-    -.28;
+    -0.25;
 
 
   npc.userData.leftLeg.rotation.x =
-    -1.2;
+    -1.15;
 
   npc.userData.rightLeg.rotation.x =
-    -1.2;
+    -1.15;
 
 
   npc.rotation.y =
+
     (
       index %
       4
     ) *
+
     Math.PI /
     2;
 
@@ -477,6 +513,7 @@ function createSeatedPerson(
       "seated",
 
     phase:
+
       Math.random() *
       10
 
@@ -495,11 +532,9 @@ function createSeatedPerson(
 }
 
 
-/*
-=====================================================
-UPDATE
-=====================================================
-*/
+/* =====================================================
+   UPDATE CROWD
+===================================================== */
 
 export function updateCrowd(
   system,
@@ -508,9 +543,9 @@ export function updateCrowd(
   camera
 ) {
 
-  /*
-    WALKERS
-  */
+  /* ===================================================
+     WALKERS
+  =================================================== */
 
   for (
     const npc of
@@ -523,6 +558,7 @@ export function updateCrowd(
       time
     );
 
+
     updateNPCDetail(
       npc,
       camera
@@ -531,9 +567,9 @@ export function updateCrowd(
   }
 
 
-  /*
-    SHOPPERS
-  */
+  /* ===================================================
+     SHOPPERS
+  =================================================== */
 
   for (
     const npc of
@@ -546,6 +582,7 @@ export function updateCrowd(
       time
     );
 
+
     updateNPCDetail(
       npc,
       camera
@@ -554,9 +591,9 @@ export function updateCrowd(
   }
 
 
-  /*
-    PHOTO
-  */
+  /* ===================================================
+     PHOTO
+  =================================================== */
 
   for (
     const npc of
@@ -568,6 +605,7 @@ export function updateCrowd(
       time
     );
 
+
     updateNPCDetail(
       npc,
       camera
@@ -576,9 +614,9 @@ export function updateCrowd(
   }
 
 
-  /*
-    SEATED
-  */
+  /* ===================================================
+     SEATED
+  =================================================== */
 
   for (
     const npc of
@@ -590,6 +628,7 @@ export function updateCrowd(
       time
     );
 
+
     updateNPCDetail(
       npc,
       camera
@@ -600,11 +639,9 @@ export function updateCrowd(
 }
 
 
-/*
-=====================================================
-WALKER UPDATE
-=====================================================
-*/
+/* =====================================================
+   UPDATE WALKER
+===================================================== */
 
 function updateWalker(
   npc,
@@ -616,6 +653,10 @@ function updateWalker(
     npc.userData.behavior;
 
 
+  /*
+    PAUSE
+  */
+
   if (
     behavior.pause >
     0
@@ -624,24 +665,32 @@ function updateWalker(
     behavior.pause -=
       delta;
 
+
     animateNPC(
       npc,
       time,
       false
     );
 
+
     return;
 
   }
 
 
+  /*
+    TARGET
+  */
+
   const target =
+
     behavior.path[
       behavior.targetIndex
     ];
 
 
   const arrived =
+
     moveTowards(
 
       npc,
@@ -663,44 +712,65 @@ function updateWalker(
   );
 
 
+  /*
+    ARRIVED
+  */
+
   if (
     arrived
   ) {
 
     /*
-      Occasional pause.
+      Sometimes stop
   */
 
     if (
       Math.random() <
-      .3
+      0.3
     ) {
 
       behavior.pause =
-        .5 +
+
+        0.5 +
+
         Math.random() *
         2.5;
 
     }
 
 
+    /*
+      Next point
+  */
+
     behavior.targetIndex +=
       behavior.direction;
 
 
+    /*
+      End of path
+  */
+
     if (
+
       behavior.targetIndex >=
       behavior.path.length
+
     ) {
 
       behavior.targetIndex =
         behavior.path.length - 2;
+
 
       behavior.direction =
         -1;
 
     }
 
+
+    /*
+      Beginning of path
+  */
 
     if (
       behavior.targetIndex <
@@ -709,6 +779,7 @@ function updateWalker(
 
       behavior.targetIndex =
         1;
+
 
       behavior.direction =
         1;
@@ -720,11 +791,9 @@ function updateWalker(
 }
 
 
-/*
-=====================================================
-SHOPPER UPDATE
-=====================================================
-*/
+/* =====================================================
+   UPDATE SHOPPER
+===================================================== */
 
 function updateShopper(
   npc,
@@ -736,12 +805,17 @@ function updateShopper(
     npc.userData.behavior;
 
 
+  /* ===================================================
+     WALKING TO SHOP
+  =================================================== */
+
   if (
     behavior.state ===
     "walking"
   ) {
 
     const arrived =
+
       moveTowards(
 
         npc,
@@ -770,15 +844,18 @@ function updateShopper(
       behavior.state =
         "looking";
 
+
       behavior.wait =
+
         4 +
+
         Math.random() *
         7;
 
 
       /*
-        Face outward toward stall.
-      */
+        Face nearby stall
+  */
 
       if (
         npc.position.x <
@@ -801,6 +878,11 @@ function updateShopper(
 
   }
 
+
+  /* ===================================================
+     LOOKING AT SHOP
+  =================================================== */
+
   else {
 
     behavior.wait -=
@@ -815,16 +897,26 @@ function updateShopper(
 
 
     /*
-      Slight looking motion
+      Look around
   */
 
     npc.userData.head.rotation.y =
 
       Math.sin(
-        time * .7 +
-        npc.userData.walkPhase
-      ) * .18;
 
+        time *
+        0.7 +
+
+        npc.userData.walkPhase
+
+      ) *
+
+      0.18;
+
+
+    /*
+      Move to another shop
+  */
 
     if (
       behavior.wait <=
@@ -832,11 +924,17 @@ function updateShopper(
     ) {
 
       const newSpot =
+
         SHOPPING_SPOTS[
+
           Math.floor(
+
             Math.random() *
+
             SHOPPING_SPOTS.length
+
           )
+
         ];
 
 
@@ -858,38 +956,75 @@ function updateShopper(
 }
 
 
-/*
-=====================================================
-PHOTO UPDATE
-=====================================================
-*/
+/* =====================================================
+   UPDATE PHOTO PERSON
+===================================================== */
 
 function updatePhoto(
   npc,
   time
 ) {
 
-  animateNPC(
-    npc,
-    time,
-    false
-  );
-
-
   const behavior =
     npc.userData.behavior;
 
 
-  npc.userData.head.rotation.y =
+  /*
+    Keep photo pose
+  */
+
+  npc.userData.leftArm.rotation.x =
+
+    -1.05 +
 
     Math.sin(
-      time * .35 +
+
+      time *
+      0.7 +
+
       behavior.phase
-    ) * .08;
+
+    ) *
+
+    0.035;
+
+
+  npc.userData.rightArm.rotation.x =
+
+    -1.05 +
+
+    Math.sin(
+
+      time *
+      0.7 +
+
+      behavior.phase
+
+    ) *
+
+    0.035;
 
 
   /*
-    Slight phone movement
+    Head movement
+  */
+
+  npc.userData.head.rotation.y =
+
+    Math.sin(
+
+      time *
+      0.35 +
+
+      behavior.phase
+
+    ) *
+
+    0.08;
+
+
+  /*
+    Phone movement
   */
 
   if (
@@ -899,42 +1034,96 @@ function updatePhoto(
     npc.userData.phone.rotation.z =
 
       Math.sin(
-        time * .7 +
+
+        time *
+        0.7 +
+
         behavior.phase
-      ) * .04;
+
+      ) *
+
+      0.04;
 
   }
 
 }
 
 
-/*
-=====================================================
-SEATED UPDATE
-=====================================================
-*/
+/* =====================================================
+   UPDATE SEATED PERSON
+===================================================== */
 
 function updateSeated(
   npc,
   time
 ) {
 
-  animateNPC(
-    npc,
-    time,
-    false
-  );
-
-
   const behavior =
     npc.userData.behavior;
 
 
+  /*
+    Keep seated legs
+  */
+
+  npc.userData.leftLeg.rotation.x =
+    -1.15;
+
+  npc.userData.rightLeg.rotation.x =
+    -1.15;
+
+
+  /*
+    Small arm movement
+  */
+
+  npc.userData.leftArm.rotation.x =
+
+    -0.2 +
+
+    Math.sin(
+
+      time *
+      0.5 +
+
+      behavior.phase
+
+    ) *
+
+    0.08;
+
+
+  npc.userData.rightArm.rotation.x =
+
+    -0.15 +
+
+    Math.sin(
+
+      time *
+      0.45 +
+
+      behavior.phase
+
+    ) *
+
+    0.08;
+
+
+  /*
+    Looking around
+  */
+
   npc.userData.head.rotation.y =
 
     Math.sin(
-      time * .4 +
+
+      time *
+      0.4 +
+
       behavior.phase
-    ) * .25;
+
+    ) *
+
+    0.25;
 
 }
