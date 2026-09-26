@@ -9,15 +9,36 @@ export function createPlayer(
   camera,
   domElement,
   colliders = [],
-  floorZones = []
+  floorZones = [],
+  walkableObjects = []
 ) {
 
   const keys = {};
 
+
   let yaw = 0;
+
   let pitch = 0;
 
-  let currentFloorHeight = 0;
+
+  let currentFloorHeight =
+    0;
+
+
+  const raycaster =
+    new THREE.Raycaster();
+
+
+  const rayOrigin =
+    new THREE.Vector3();
+
+
+  const rayDirection =
+    new THREE.Vector3(
+      0,
+      -1,
+      0
+    );
 
 
   camera.position.set(
@@ -28,14 +49,15 @@ export function createPlayer(
 
 
   /* =====================================================
-     KEYBOARD
+     INPUT
   ===================================================== */
 
   window.addEventListener(
     "keydown",
     event => {
 
-      keys[event.code] = true;
+      keys[event.code] =
+        true;
 
     }
   );
@@ -45,15 +67,12 @@ export function createPlayer(
     "keyup",
     event => {
 
-      keys[event.code] = false;
+      keys[event.code] =
+        false;
 
     }
   );
 
-
-  /* =====================================================
-     MOUSE
-  ===================================================== */
 
   document.addEventListener(
     "mousemove",
@@ -63,25 +82,27 @@ export function createPlayer(
         document.pointerLockElement !==
         domElement
       ) {
+
         return;
+
       }
 
 
       yaw -=
-        event.movementX * 0.002;
+        event.movementX *
+        0.002;
 
 
       pitch -=
-        event.movementY * 0.002;
+        event.movementY *
+        0.002;
 
 
       pitch =
-        Math.max(
+        THREE.MathUtils.clamp(
+          pitch,
           -1.45,
-          Math.min(
-            1.45,
-            pitch
-          )
+          1.45
         );
 
     }
@@ -127,10 +148,13 @@ export function createPlayer(
 
 
       const dx =
-        x - nearestX;
+        x -
+        nearestX;
+
 
       const dz =
-        z - nearestZ;
+        z -
+        nearestZ;
 
 
       if (
@@ -153,7 +177,70 @@ export function createPlayer(
 
 
   /* =====================================================
-     STAIR HEIGHT
+     RAYCAST GROUND
+  ===================================================== */
+
+  function getRaycastFloor(
+    x,
+    z
+  ) {
+
+    if (
+      walkableObjects.length ===
+      0
+    ) {
+
+      return null;
+
+    }
+
+
+    rayOrigin.set(
+
+      x,
+
+      camera.position.y +
+      2,
+
+      z
+
+    );
+
+
+    raycaster.set(
+      rayOrigin,
+      rayDirection
+    );
+
+
+    raycaster.far =
+      5;
+
+
+    const hits =
+      raycaster.intersectObjects(
+        walkableObjects,
+        true
+      );
+
+
+    if (
+      hits.length ===
+      0
+    ) {
+
+      return null;
+
+    }
+
+
+    return hits[0].point.y;
+
+  }
+
+
+  /* =====================================================
+     LEGACY STAIR HEIGHT
   ===================================================== */
 
   function getStairHeight(
@@ -162,7 +249,7 @@ export function createPlayer(
     z
   ) {
 
-    let progress = 0;
+    let progress;
 
 
     if (
@@ -170,10 +257,14 @@ export function createPlayer(
     ) {
 
       progress =
+
         (
-          z - zone.minZ
+          z -
+          zone.minZ
         )
+
         /
+
         (
           zone.maxZ -
           zone.minZ
@@ -184,10 +275,14 @@ export function createPlayer(
     else {
 
       progress =
+
         (
-          x - zone.minX
+          x -
+          zone.minX
         )
+
         /
+
         (
           zone.maxX -
           zone.minX
@@ -205,27 +300,29 @@ export function createPlayer(
 
 
     return THREE.MathUtils.lerp(
+
       zone.startHeight,
+
       zone.endHeight,
+
       progress
+
     );
 
   }
 
 
   /* =====================================================
-     FLOOR HEIGHT
+     LEGACY FLOOR ZONES
   ===================================================== */
 
-  function getFloorHeight(
+  function getZoneFloor(
     x,
-    z,
-    currentHeight
+    z
   ) {
 
-    let stairHeight = null;
-
-    let normalFloor = 0;
+    let result =
+      null;
 
 
     for (
@@ -233,85 +330,61 @@ export function createPlayer(
       floorZones
     ) {
 
-      const inside =
-
-        x >= zone.minX &&
-        x <= zone.maxX &&
-        z >= zone.minZ &&
-        z <= zone.maxZ;
-
-
       if (
-        !inside
+
+        x < zone.minX ||
+        x > zone.maxX ||
+        z < zone.minZ ||
+        z > zone.maxZ
+
       ) {
-        continue;
-      }
-
-
-      /*
-        STAIRS
-      */
-
-      if (
-        zone.type === "stairs"
-      ) {
-
-        stairHeight =
-          getStairHeight(
-            zone,
-            x,
-            z
-          );
 
         continue;
 
       }
 
 
-      /*
-        NORMAL FLOOR
-      */
+      if (
+        zone.type ===
+        "stairs"
+      ) {
+
+        return getStairHeight(
+          zone,
+          x,
+          z
+        );
+
+      }
+
 
       if (
         typeof zone.height ===
         "number"
       ) {
 
-        /*
-          Ground floor is always valid.
-          Upper floors require proximity.
-        */
+        const difference =
+
+          Math.abs(
+
+            zone.height -
+            currentFloorHeight
+
+          );
+
 
         if (
-          zone.height === 0
+          difference <
+          0.85
         ) {
 
-          normalFloor =
-            Math.max(
-              normalFloor,
-              0
-            );
-
-        }
-
-        else {
-
-          const difference =
-            Math.abs(
-              zone.height -
-              currentHeight
-            );
-
-
           if (
-            difference < 0.75
+            result === null ||
+            zone.height > result
           ) {
 
-            normalFloor =
-              Math.max(
-                normalFloor,
-                zone.height
-              );
+            result =
+              zone.height;
 
           }
 
@@ -322,20 +395,61 @@ export function createPlayer(
     }
 
 
+    return result;
+
+  }
+
+
+  /* =====================================================
+     GROUND RESOLUTION
+  ===================================================== */
+
+  function resolveFloor(
+    x,
+    z
+  ) {
+
     /*
-      Stair takes priority.
-    */
+      First try actual geometry.
+  */
+
+    const rayHeight =
+      getRaycastFloor(
+        x,
+        z
+      );
+
 
     if (
-      stairHeight !== null
+      rayHeight !== null
     ) {
 
-      return stairHeight;
+      return rayHeight;
 
     }
 
 
-    return normalFloor;
+    /*
+      Fall back to existing system.
+  */
+
+    const zoneHeight =
+      getZoneFloor(
+        x,
+        z
+      );
+
+
+    if (
+      zoneHeight !== null
+    ) {
+
+      return zoneHeight;
+
+    }
+
+
+    return 0;
 
   }
 
@@ -355,13 +469,10 @@ export function createPlayer(
     camera.rotation.y =
       yaw;
 
+
     camera.rotation.x =
       pitch;
 
-
-    /* =================================================
-       INPUT
-    ================================================= */
 
     let inputX = 0;
     let inputZ = 0;
@@ -395,7 +506,7 @@ export function createPlayer(
     }
 
 
-    const length =
+    const inputLength =
       Math.hypot(
         inputX,
         inputZ
@@ -403,21 +514,21 @@ export function createPlayer(
 
 
     if (
-      length > 0
+      inputLength > 0
     ) {
 
-      inputX /= length;
-      inputZ /= length;
+      inputX /=
+        inputLength;
+
+      inputZ /=
+        inputLength;
 
     }
 
 
-    /* =================================================
-       DIRECTION
-    ================================================= */
-
     const forwardX =
       -Math.sin(yaw);
+
 
     const forwardZ =
       -Math.cos(yaw);
@@ -425,6 +536,7 @@ export function createPlayer(
 
     const rightX =
       Math.cos(yaw);
+
 
     const rightZ =
       -Math.sin(yaw);
@@ -448,10 +560,6 @@ export function createPlayer(
       inputX;
 
 
-    /* =================================================
-       SPEED
-    ================================================= */
-
     const running =
 
       keys["ShiftLeft"] ||
@@ -466,18 +574,21 @@ export function createPlayer(
         : CONFIG.player.speed;
 
 
-    const step =
-      speed * delta;
+    const distance =
+      speed *
+      delta;
 
 
-    /* =================================================
-       X MOVEMENT
-    ================================================= */
+    /*
+      X
+  */
 
     const nextX =
 
       camera.position.x +
-      moveX * step;
+
+      moveX *
+      distance;
 
 
     if (
@@ -493,14 +604,16 @@ export function createPlayer(
     }
 
 
-    /* =================================================
-       Z MOVEMENT
-    ================================================= */
+    /*
+      Z
+  */
 
     const nextZ =
 
       camera.position.z +
-      moveZ * step;
+
+      moveZ *
+      distance;
 
 
     if (
@@ -516,48 +629,51 @@ export function createPlayer(
     }
 
 
-    /* =================================================
-       FLOOR / STAIRS
-    ================================================= */
+    /*
+      Ground
+  */
 
     const targetFloor =
 
-      getFloorHeight(
+      resolveFloor(
+
         camera.position.x,
-        camera.position.z,
-        currentFloorHeight
+
+        camera.position.z
+
       );
 
-
-    /*
-      Faster interpolation prevents
-      sinking through steps.
-    */
 
     currentFloorHeight =
 
       THREE.MathUtils.lerp(
+
         currentFloorHeight,
+
         targetFloor,
+
         Math.min(
           1,
           delta * 18
         )
+
       );
 
 
     camera.position.y =
 
       CONFIG.player.height +
+
       currentFloorHeight;
 
 
-    /* =================================================
-       WALK BOB
-    ================================================= */
+    /*
+      Walking camera
+  */
 
     if (
-      length > 0
+      inputLength >
+      0
     ) {
 
       const time =
@@ -568,7 +684,7 @@ export function createPlayer(
       camera.position.y +=
 
         Math.sin(time) *
-        0.012;
+        0.011;
 
     }
 
