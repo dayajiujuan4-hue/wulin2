@@ -15,7 +15,8 @@ import {
 } from "./stalls.js";
 
 import {
-  createNeon
+  createNeon,
+  updateNeon
 } from "./neon.js";
 
 import {
@@ -27,7 +28,8 @@ import {
 } from "../effects/lighting.js";
 
 import {
-  createAtmosphere
+  createAtmosphere,
+  updateAtmosphere
 } from "../effects/atmosphere.js";
 
 import {
@@ -70,10 +72,6 @@ import {
 } from "../people/interactiveNPCs.js";
 
 
-/* =====================================================
-   SYSTEM REFERENCES
-===================================================== */
-
 let neonObjects = [];
 
 let crowdSystem = null;
@@ -100,18 +98,14 @@ export function createWorld(
   const walkableObjects = [];
 
 
-  /* ===================================================
-     GLOBAL LIGHTING
-  =================================================== */
+  /* LIGHT */
 
   createLighting(
     scene
   );
 
 
-  /* ===================================================
-     GROUND
-  =================================================== */
+  /* GROUND */
 
   const ground =
     createGround(
@@ -125,9 +119,24 @@ export function createWorld(
       Array.isArray(ground)
     ) {
 
-      walkableObjects.push(
-        ...ground
-      );
+      for (
+        const object of ground
+      ) {
+
+        if (
+          object &&
+          !walkableObjects.includes(
+            object
+          )
+        ) {
+
+          walkableObjects.push(
+            object
+          );
+
+        }
+
+      }
 
     }
 
@@ -144,18 +153,14 @@ export function createWorld(
   }
 
 
-  /* ===================================================
-     DISTRICTS / ROADS
-  =================================================== */
+  /* ROADS */
 
   createDistricts(
     scene
   );
 
 
-  /* ===================================================
-     BACKGROUND BUILDINGS
-  =================================================== */
+  /* BUILDINGS */
 
   createBuildings(
     scene,
@@ -163,9 +168,7 @@ export function createWorld(
   );
 
 
-  /* ===================================================
-     ENTERABLE BUILDINGS
-  =================================================== */
+  /* ENTERABLE BUILDINGS */
 
   createBuildingSystem(
     scene,
@@ -174,9 +177,7 @@ export function createWorld(
   );
 
 
-  /* ===================================================
-     DETAILED FACADES
-  =================================================== */
+  /* DETAILED FACADES */
 
   createFacadeSystem(
     scene,
@@ -184,18 +185,14 @@ export function createWorld(
   );
 
 
-  /* ===================================================
-     HANGZHOU SKYLINE
-  =================================================== */
+  /* DISTANT CITY */
 
   createCityscape(
     scene
   );
 
 
-  /* ===================================================
-     MARKET STALLS
-  =================================================== */
+  /* MARKET */
 
   createStalls(
     scene,
@@ -203,9 +200,7 @@ export function createWorld(
   );
 
 
-  /* ===================================================
-     NEON
-  =================================================== */
+  /* NEON */
 
   neonObjects =
     createNeon(
@@ -213,36 +208,26 @@ export function createWorld(
     ) || [];
 
 
-  /* ===================================================
-     PROPS
-  =================================================== */
+  /* STREET OBJECTS */
 
   createProps(
     scene
   );
 
 
-  /* ===================================================
-     STREET DETAILS
-  =================================================== */
-
   createStreetDetails(
     scene
   );
 
 
-  /* ===================================================
-     WET ROAD
-  =================================================== */
+  /* ROAD REFLECTION */
 
   createWetRoad(
     scene
   );
 
 
-  /* ===================================================
-     CITY LIGHTS
-  =================================================== */
+  /* DISTANT LIGHTS */
 
   cityLightSystem =
     createCityLights(
@@ -250,18 +235,14 @@ export function createWorld(
     );
 
 
-  /* ===================================================
-     ATMOSPHERE
-  =================================================== */
+  /* PARTICLES */
 
   createAtmosphere(
     scene
   );
 
 
-  /* ===================================================
-     CROWD
-  =================================================== */
+  /* PEOPLE */
 
   crowdSystem =
     createCrowd(
@@ -269,19 +250,11 @@ export function createWorld(
     );
 
 
-  /* ===================================================
-     VENDORS
-  =================================================== */
-
   vendorSystem =
     createVendors(
       scene
     );
 
-
-  /* ===================================================
-     INTERACTIVE NPCs
-  =================================================== */
 
   interactiveNPCs =
     createInteractiveNPCs(
@@ -289,16 +262,15 @@ export function createWorld(
     );
 
 
-  /* ===================================================
-     WALKABLE OBJECTS
-  =================================================== */
+  /* WALKABLE FLOORS */
 
   scene.traverse(
     object => {
 
       if (
         object.isMesh &&
-        object.userData.walkable
+        object.userData.walkable ===
+        true
       ) {
 
         if (
@@ -318,10 +290,6 @@ export function createWorld(
     }
   );
 
-
-  /* ===================================================
-     RETURN WORLD
-  =================================================== */
 
   return {
 
@@ -348,80 +316,18 @@ export function updateWorld(
   camera
 ) {
 
-  /* ===================================================
-     SIMPLE NEON ANIMATION
-
-     neon.js に updateNeon が無くても
-     ここで安全にアニメーションさせる
-  =================================================== */
-
-  if (
-    Array.isArray(
-      neonObjects
-    )
-  ) {
-
-    for (
-      const object of
-      neonObjects
-    ) {
-
-      if (
-        !object ||
-        !object.material
-      ) {
-
-        continue;
-
-      }
+  updateNeon(
+    neonObjects,
+    time
+  );
 
 
-      /*
-        EmissiveMaterialを持つものだけ
-        アニメーションする
-      */
+  updateAtmosphere(
+    delta,
+    time,
+    camera
+  );
 
-      if (
-        "emissiveIntensity"
-        in object.material
-      ) {
-
-        const base =
-          object.userData.base ??
-          2.2;
-
-
-        const speed =
-          object.userData.speed ??
-          1;
-
-
-        const phase =
-          object.userData.phase ??
-          0;
-
-
-        object.material.emissiveIntensity =
-
-          base +
-
-          Math.sin(
-            time * speed +
-            phase
-          ) *
-
-          0.3;
-
-      }
-
-    }
-
-  }
-
-
-  /* ===================================================
-     CITY LIGHTS
-  =================================================== */
 
   if (
     cityLightSystem
@@ -434,10 +340,6 @@ export function updateWorld(
 
   }
 
-
-  /* ===================================================
-     CROWD
-  =================================================== */
 
   if (
     crowdSystem
@@ -452,10 +354,6 @@ export function updateWorld(
 
   }
 
-
-  /* ===================================================
-     VENDORS
-  =================================================== */
 
   if (
     vendorSystem
