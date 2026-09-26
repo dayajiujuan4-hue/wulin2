@@ -12,22 +12,12 @@ export function createPlayer(
   floorZones = []
 ) {
 
-  /* ===================================================
-     STATE
-  =================================================== */
-
   const keys = {};
 
+  let yaw = 0;
+  let pitch = 0;
 
-  let yaw =
-    0;
-
-  let pitch =
-    0;
-
-
-  let currentFloorHeight =
-    0;
+  let currentFloorHeight = 0;
 
 
   camera.position.set(
@@ -37,17 +27,15 @@ export function createPlayer(
   );
 
 
-  /* ===================================================
+  /* =====================================================
      KEYBOARD
-  =================================================== */
+  ===================================================== */
 
   window.addEventListener(
     "keydown",
     event => {
 
-      keys[
-        event.code
-      ] = true;
+      keys[event.code] = true;
 
     }
   );
@@ -57,17 +45,15 @@ export function createPlayer(
     "keyup",
     event => {
 
-      keys[
-        event.code
-      ] = false;
+      keys[event.code] = false;
 
     }
   );
 
 
-  /* ===================================================
+  /* =====================================================
      MOUSE
-  =================================================== */
+  ===================================================== */
 
   document.addEventListener(
     "mousemove",
@@ -77,43 +63,34 @@ export function createPlayer(
         document.pointerLockElement !==
         domElement
       ) {
-
         return;
-
       }
 
 
       yaw -=
-
-        event.movementX *
-        0.002;
+        event.movementX * 0.002;
 
 
       pitch -=
-
-        event.movementY *
-        0.002;
+        event.movementY * 0.002;
 
 
       pitch =
         Math.max(
-
           -1.45,
-
           Math.min(
             1.45,
             pitch
           )
-
         );
 
     }
   );
 
 
-  /* ===================================================
+  /* =====================================================
      COLLISION
-  =================================================== */
+  ===================================================== */
 
   function collides(
     x,
@@ -131,50 +108,36 @@ export function createPlayer(
 
       const nearestX =
         Math.max(
-
           collider.minX,
-
           Math.min(
             x,
             collider.maxX
           )
-
         );
 
 
       const nearestZ =
         Math.max(
-
           collider.minZ,
-
           Math.min(
             z,
             collider.maxZ
           )
-
         );
 
 
       const dx =
-        x -
-        nearestX;
-
+        x - nearestX;
 
       const dz =
-        z -
-        nearestZ;
+        z - nearestZ;
 
 
       if (
-
         dx * dx +
         dz * dz
-
         <
-
-        radius *
-        radius
-
+        radius * radius
       ) {
 
         return true;
@@ -189,22 +152,80 @@ export function createPlayer(
   }
 
 
-  /* ===================================================
+  /* =====================================================
+     STAIR HEIGHT
+  ===================================================== */
+
+  function getStairHeight(
+    zone,
+    x,
+    z
+  ) {
+
+    let progress = 0;
+
+
+    if (
+      zone.axis === "z"
+    ) {
+
+      progress =
+        (
+          z - zone.minZ
+        )
+        /
+        (
+          zone.maxZ -
+          zone.minZ
+        );
+
+    }
+
+    else {
+
+      progress =
+        (
+          x - zone.minX
+        )
+        /
+        (
+          zone.maxX -
+          zone.minX
+        );
+
+    }
+
+
+    progress =
+      THREE.MathUtils.clamp(
+        progress,
+        0,
+        1
+      );
+
+
+    return THREE.MathUtils.lerp(
+      zone.startHeight,
+      zone.endHeight,
+      progress
+    );
+
+  }
+
+
+  /* =====================================================
      FLOOR HEIGHT
-  =================================================== */
+  ===================================================== */
 
   function getFloorHeight(
     x,
     z,
-    currentY
+    currentHeight
   ) {
 
-    let bestHeight =
-      0;
+    let stairHeight = null;
 
-
-    let bestDifference =
-      Infinity;
+    let normalFloor = 0;
 
 
     for (
@@ -212,47 +233,87 @@ export function createPlayer(
       floorZones
     ) {
 
-      if (
+      const inside =
 
         x >= zone.minX &&
         x <= zone.maxX &&
-
         z >= zone.minZ &&
-        z <= zone.maxZ
+        z <= zone.maxZ;
 
+
+      if (
+        !inside
+      ) {
+        continue;
+      }
+
+
+      /*
+        STAIRS
+      */
+
+      if (
+        zone.type === "stairs"
       ) {
 
-        const difference =
-
-          Math.abs(
-
-            zone.height -
-            currentY
-
+        stairHeight =
+          getStairHeight(
+            zone,
+            x,
+            z
           );
 
+        continue;
+
+      }
+
+
+      /*
+        NORMAL FLOOR
+      */
+
+      if (
+        typeof zone.height ===
+        "number"
+      ) {
 
         /*
-          Prevent teleporting from
-          ground directly to second floor.
-  */
+          Ground floor is always valid.
+          Upper floors require proximity.
+        */
 
         if (
-
-          difference <
-          0.65 &&
-
-          difference <
-          bestDifference
-
+          zone.height === 0
         ) {
 
-          bestHeight =
-            zone.height;
+          normalFloor =
+            Math.max(
+              normalFloor,
+              0
+            );
+
+        }
+
+        else {
+
+          const difference =
+            Math.abs(
+              zone.height -
+              currentHeight
+            );
 
 
-          bestDifference =
-            difference;
+          if (
+            difference < 0.75
+          ) {
+
+            normalFloor =
+              Math.max(
+                normalFloor,
+                zone.height
+              );
+
+          }
 
         }
 
@@ -261,22 +322,31 @@ export function createPlayer(
     }
 
 
-    return bestHeight;
+    /*
+      Stair takes priority.
+    */
+
+    if (
+      stairHeight !== null
+    ) {
+
+      return stairHeight;
+
+    }
+
+
+    return normalFloor;
 
   }
 
 
-  /* ===================================================
+  /* =====================================================
      UPDATE
-  =================================================== */
+  ===================================================== */
 
   function update(
     delta
   ) {
-
-    /*
-      Camera rotation
-  */
 
     camera.rotation.order =
       "YXZ";
@@ -285,59 +355,43 @@ export function createPlayer(
     camera.rotation.y =
       yaw;
 
-
     camera.rotation.x =
       pitch;
 
 
     /* =================================================
-       MOVEMENT INPUT
+       INPUT
     ================================================= */
 
-    let inputX =
-      0;
-
-    let inputZ =
-      0;
+    let inputX = 0;
+    let inputZ = 0;
 
 
     if (
       keys["KeyW"]
     ) {
-
-      inputZ -=
-        1;
-
+      inputZ -= 1;
     }
 
 
     if (
       keys["KeyS"]
     ) {
-
-      inputZ +=
-        1;
-
+      inputZ += 1;
     }
 
 
     if (
       keys["KeyA"]
     ) {
-
-      inputX -=
-        1;
-
+      inputX -= 1;
     }
 
 
     if (
       keys["KeyD"]
     ) {
-
-      inputX +=
-        1;
-
+      inputX += 1;
     }
 
 
@@ -349,15 +403,11 @@ export function createPlayer(
 
 
     if (
-      length >
-      0
+      length > 0
     ) {
 
-      inputX /=
-        length;
-
-      inputZ /=
-        length;
+      inputX /= length;
+      inputZ /= length;
 
     }
 
@@ -367,27 +417,17 @@ export function createPlayer(
     ================================================= */
 
     const forwardX =
-      -Math.sin(
-        yaw
-      );
-
+      -Math.sin(yaw);
 
     const forwardZ =
-      -Math.cos(
-        yaw
-      );
+      -Math.cos(yaw);
 
 
     const rightX =
-      Math.cos(
-        yaw
-      );
-
+      Math.cos(yaw);
 
     const rightZ =
-      -Math.sin(
-        yaw
-      );
+      -Math.sin(yaw);
 
 
     const moveX =
@@ -427,20 +467,17 @@ export function createPlayer(
 
 
     const step =
-      speed *
-      delta;
+      speed * delta;
 
 
     /* =================================================
-       X COLLISION
+       X MOVEMENT
     ================================================= */
 
     const nextX =
 
       camera.position.x +
-
-      moveX *
-      step;
+      moveX * step;
 
 
     if (
@@ -457,15 +494,13 @@ export function createPlayer(
 
 
     /* =================================================
-       Z COLLISION
+       Z MOVEMENT
     ================================================= */
 
     const nextZ =
 
       camera.position.z +
-
-      moveZ *
-      step;
+      moveZ * step;
 
 
     if (
@@ -488,40 +523,32 @@ export function createPlayer(
     const targetFloor =
 
       getFloorHeight(
-
         camera.position.x,
-
         camera.position.z,
-
         currentFloorHeight
-
       );
 
 
     /*
-      Smooth vertical movement.
-  */
+      Faster interpolation prevents
+      sinking through steps.
+    */
 
     currentFloorHeight =
 
       THREE.MathUtils.lerp(
-
         currentFloorHeight,
-
         targetFloor,
-
         Math.min(
           1,
-          delta * 12
+          delta * 18
         )
-
       );
 
 
     camera.position.y =
 
       CONFIG.player.height +
-
       currentFloorHeight;
 
 
@@ -530,8 +557,7 @@ export function createPlayer(
     ================================================= */
 
     if (
-      length >
-      0
+      length > 0
     ) {
 
       const time =
@@ -541,11 +567,8 @@ export function createPlayer(
 
       camera.position.y +=
 
-        Math.sin(
-          time
-        ) *
-
-        0.015;
+        Math.sin(time) *
+        0.012;
 
     }
 
