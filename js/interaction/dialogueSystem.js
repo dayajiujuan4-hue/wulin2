@@ -8,6 +8,7 @@ export function createDialogueSystem() {
   let activeNPC =
     null;
 
+
   let currentNode =
     null;
 
@@ -21,31 +22,23 @@ export function createDialogueSystem() {
   Object.assign(
     overlay.style,
     {
+      position: "fixed",
+      inset: "0",
 
-      position:
-        "fixed",
+      display: "none",
 
-      left:
-        "0",
-
-      right:
-        "0",
-
-      bottom:
-        "0",
+      alignItems: "flex-end",
+      justifyContent: "center",
 
       padding:
-        "0 20px 28px",
+        "0 24px 42px",
 
-      display:
-        "none",
+      zIndex: "20000",
 
-      zIndex:
-        "10000",
+      pointerEvents: "none",
 
-      pointerEvents:
-        "none"
-
+      background:
+        "linear-gradient(to bottom, transparent 55%, rgba(0,0,0,.25))"
     }
   );
 
@@ -64,31 +57,34 @@ export function createDialogueSystem() {
   Object.assign(
     panel.style,
     {
+      position: "relative",
 
-      maxWidth:
-        "820px",
-
-      margin:
-        "0 auto",
+      width: "min(880px, 92vw)",
 
       padding:
-        "22px 24px",
+        "24px 28px 22px",
 
       background:
-        "rgba(8,12,18,.95)",
+        "linear-gradient(135deg, rgba(11,15,22,.94), rgba(7,10,15,.96))",
+
+      backdropFilter:
+        "blur(12px)",
 
       border:
-        "1px solid rgba(255,255,255,.18)",
+        "1px solid rgba(255,255,255,.14)",
 
       borderRadius:
-        "12px",
+        "8px",
 
       boxShadow:
-        "0 15px 50px rgba(0,0,0,.6)",
+        "0 22px 70px rgba(0,0,0,.65)",
 
-      color:
-        "#fff"
+      color: "#fff",
 
+      fontFamily:
+        "system-ui, sans-serif",
+
+      overflow: "hidden"
     }
   );
 
@@ -98,100 +94,137 @@ export function createDialogueSystem() {
   );
 
 
-  const name =
+  const accent =
     document.createElement(
       "div"
     );
 
 
-  name.style.fontSize =
-    "20px";
+  Object.assign(
+    accent.style,
+    {
+      position: "absolute",
+      left: "0",
+      top: "0",
+      bottom: "0",
+      width: "3px",
 
-  name.style.fontWeight =
-    "700";
-
-  name.style.color =
-    "#ffd66b";
-
-
-  panel.appendChild(
-    name
+      background:
+        "linear-gradient(#ffd56a,#d49a36)"
+    }
   );
 
 
-  const role =
+  panel.appendChild(
+    accent
+  );
+
+
+  const nameElement =
     document.createElement(
       "div"
     );
 
 
-  role.style.fontSize =
-    "12px";
-
-  role.style.opacity =
-    ".6";
-
-  role.style.marginTop =
-    "3px";
-
-
-  panel.appendChild(
-    role
+  Object.assign(
+    nameElement.style,
+    {
+      fontSize: "20px",
+      fontWeight: "750",
+      letterSpacing: ".02em",
+      color: "#f2cf78"
+    }
   );
 
 
-  const text =
+  panel.appendChild(
+    nameElement
+  );
+
+
+  const roleElement =
     document.createElement(
       "div"
     );
 
 
-  text.style.fontSize =
-    "17px";
-
-  text.style.lineHeight =
-    "1.8";
-
-  text.style.marginTop =
-    "14px";
-
-
-  panel.appendChild(
-    text
+  Object.assign(
+    roleElement.style,
+    {
+      fontSize: "12px",
+      color: "rgba(255,255,255,.48)",
+      marginTop: "3px"
+    }
   );
 
 
-  const choices =
+  panel.appendChild(
+    roleElement
+  );
+
+
+  const textElement =
     document.createElement(
       "div"
     );
 
 
-  choices.style.display =
-    "flex";
+  Object.assign(
+    textElement.style,
+    {
+      marginTop: "16px",
 
-  choices.style.flexDirection =
-    "column";
+      fontSize:
+        "clamp(15px, 1.5vw, 17px)",
 
-  choices.style.gap =
-    "8px";
+      lineHeight: "1.9",
 
-  choices.style.marginTop =
-    "18px";
+      letterSpacing: ".015em",
 
-
-  panel.appendChild(
-    choices
+      color:
+        "rgba(255,255,255,.94)"
+    }
   );
 
 
-  function start(
-    npc
-  ) {
+  panel.appendChild(
+    textElement
+  );
+
+
+  const choicesElement =
+    document.createElement(
+      "div"
+    );
+
+
+  Object.assign(
+    choicesElement.style,
+    {
+      display: "flex",
+      flexDirection: "column",
+      gap: "5px",
+      marginTop: "18px"
+    }
+  );
+
+
+  panel.appendChild(
+    choicesElement
+  );
+
+
+  function start(npc) {
 
     if (
+      !npc ||
       !DIALOGUES[npc.id]
     ) {
+
+      console.warn(
+        "Dialogue not found:",
+        npc?.id
+      );
 
       return;
 
@@ -207,7 +240,7 @@ export function createDialogueSystem() {
 
 
     overlay.style.display =
-      "block";
+      "flex";
 
 
     overlay.style.pointerEvents =
@@ -217,21 +250,19 @@ export function createDialogueSystem() {
     render();
 
 
-    /*
-      Important:
-      render first, then unlock.
+    requestAnimationFrame(
+      () => {
 
-      main.js can now see
-      isOpen() === true.
-    */
+        if (
+          document.pointerLockElement
+        ) {
 
-    if (
-      document.pointerLockElement
-    ) {
+          document.exitPointerLock();
 
-      document.exitPointerLock();
+        }
 
-    }
+      }
+    );
 
   }
 
@@ -239,17 +270,8 @@ export function createDialogueSystem() {
   function render() {
 
     if (
-      !activeNPC
-    ) {
-
-      return;
-
-    }
-
-
-    if (
-      currentNode ===
-      "end"
+      !activeNPC ||
+      currentNode === "end"
     ) {
 
       close();
@@ -273,6 +295,13 @@ export function createDialogueSystem() {
 
     if (!node) {
 
+      console.warn(
+        "Missing dialogue node:",
+        activeNPC.id,
+        currentNode
+      );
+
+
       close();
 
       return;
@@ -280,92 +309,162 @@ export function createDialogueSystem() {
     }
 
 
-    name.textContent =
+    nameElement.textContent =
       node.speaker ||
       activeNPC.name;
 
 
-    role.textContent =
+    roleElement.textContent =
       node.role ||
       activeNPC.role ||
       "";
 
 
-    text.textContent =
-      node.text ||
+    textElement.textContent =
+      node.text || "";
+
+
+    choicesElement.innerHTML =
       "";
 
 
-    choices.innerHTML =
-      "";
+    const choices =
+      node.choices || [];
 
 
-    for (
-      const choice of
-      node.choices || []
-    ) {
+    choices.forEach(
+      (choice, index) => {
 
-      const button =
-        document.createElement(
-          "button"
+        const button =
+          document.createElement(
+            "button"
+          );
+
+
+        button.innerHTML =
+          `
+          <span style="
+            display:inline-block;
+            width:24px;
+            color:rgba(255,255,255,.35);
+          ">${index + 1}</span>
+          ${choice.text}
+          `;
+
+
+        Object.assign(
+          button.style,
+          {
+            width: "100%",
+
+            padding:
+              "10px 12px",
+
+            background:
+              "transparent",
+
+            border: "none",
+
+            borderLeft:
+              "2px solid transparent",
+
+            color:
+              "rgba(255,255,255,.78)",
+
+            fontSize:
+              "14px",
+
+            textAlign:
+              "left",
+
+            cursor:
+              "pointer",
+
+            transition:
+              "all .12s"
+          }
         );
 
 
-      button.textContent =
-        choice.text;
+        button.addEventListener(
+          "mouseenter",
+          () => {
+
+            button.style.color =
+              "#fff";
 
 
-      Object.assign(
-        button.style,
-        {
-
-          padding:
-            "12px 14px",
-
-          background:
-            "rgba(255,255,255,.07)",
-
-          border:
-            "1px solid rgba(255,255,255,.13)",
-
-          borderRadius:
-            "7px",
-
-          color:
-            "#fff",
-
-          textAlign:
-            "left",
-
-          cursor:
-            "pointer",
-
-          fontSize:
-            "15px"
-
-        }
-      );
+            button.style.background =
+              "rgba(255,255,255,.055)";
 
 
-      button.addEventListener(
-        "click",
-        () => {
-
-          currentNode =
-            choice.next;
+            button.style.borderLeftColor =
+              "#e7c36d";
 
 
-          render();
+            button.style.paddingLeft =
+              "17px";
 
-        }
-      );
+          }
+        );
 
 
-      choices.appendChild(
-        button
-      );
+        button.addEventListener(
+          "mouseleave",
+          () => {
 
-    }
+            button.style.color =
+              "rgba(255,255,255,.78)";
+
+
+            button.style.background =
+              "transparent";
+
+
+            button.style.borderLeftColor =
+              "transparent";
+
+
+            button.style.paddingLeft =
+              "12px";
+
+          }
+        );
+
+
+        button.addEventListener(
+          "click",
+          () => {
+
+            if (
+              !choice.next ||
+              choice.next ===
+              "end"
+            ) {
+
+              close();
+
+              return;
+
+            }
+
+
+            currentNode =
+              choice.next;
+
+
+            render();
+
+          }
+        );
+
+
+        choicesElement.appendChild(
+          button
+        );
+
+      }
+    );
 
   }
 
@@ -399,13 +498,8 @@ export function createDialogueSystem() {
 
 
   return {
-
     start,
-
     close,
-
     isOpen
-
   };
-
 }
