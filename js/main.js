@@ -32,6 +32,145 @@ import {
 
 
 /* =====================================================
+   GLOBAL ERROR DISPLAY
+===================================================== */
+
+function showFatalError(error) {
+
+  console.error(
+    "WULIN NIGHT MARKET ERROR:",
+    error
+  );
+
+
+  const loading =
+    document.getElementById(
+      "loadingScreen"
+    );
+
+
+  if (loading) {
+
+    loading.style.display =
+      "none";
+
+  }
+
+
+  let panel =
+    document.getElementById(
+      "fatalErrorPanel"
+    );
+
+
+  if (!panel) {
+
+    panel =
+      document.createElement(
+        "div"
+      );
+
+
+    panel.id =
+      "fatalErrorPanel";
+
+
+    panel.style.position =
+      "fixed";
+
+    panel.style.left =
+      "20px";
+
+    panel.style.right =
+      "20px";
+
+    panel.style.top =
+      "20px";
+
+    panel.style.zIndex =
+      "999999";
+
+    panel.style.padding =
+      "20px";
+
+    panel.style.background =
+      "rgba(30, 0, 0, 0.96)";
+
+    panel.style.border =
+      "1px solid #ff5555";
+
+    panel.style.borderRadius =
+      "10px";
+
+    panel.style.color =
+      "#ffffff";
+
+    panel.style.fontFamily =
+      "monospace";
+
+    panel.style.whiteSpace =
+      "pre-wrap";
+
+    panel.style.overflowWrap =
+      "anywhere";
+
+
+    document.body.appendChild(
+      panel
+    );
+
+  }
+
+
+  const message =
+
+    error?.stack ||
+    error?.message ||
+    String(error);
+
+
+  panel.textContent =
+
+    "武林夜市の読み込み中にエラーが発生しました。\n\n" +
+    message;
+
+}
+
+
+/* =====================================================
+   GLOBAL BROWSER ERRORS
+===================================================== */
+
+window.addEventListener(
+  "error",
+  event => {
+
+    showFatalError(
+
+      event.error ||
+      event.message ||
+      "Unknown JavaScript error"
+
+    );
+
+  }
+);
+
+
+window.addEventListener(
+  "unhandledrejection",
+  event => {
+
+    showFatalError(
+      event.reason ||
+      "Unhandled Promise rejection"
+    );
+
+  }
+);
+
+
+/* =====================================================
    SCENE
 ===================================================== */
 
@@ -80,56 +219,54 @@ scene.add(
    RENDERER
 ===================================================== */
 
-const renderer =
-  createRenderer();
+let renderer = null;
+
+let post = null;
+
+let world = null;
+
+let player = null;
+
+let dialogueSystem = null;
+
+let interactionSystem = null;
 
 
 /* =====================================================
-   POST PROCESSING
-===================================================== */
-
-const post =
-  createPostProcessing(
-    renderer,
-    scene,
-    camera
-  );
-
-
-/* =====================================================
-   GAME SYSTEMS
-===================================================== */
-
-let world =
-  null;
-
-
-let player =
-  null;
-
-
-let dialogueSystem =
-  null;
-
-
-let interactionSystem =
-  null;
-
-
-/* =====================================================
-   CREATE WORLD
+   INITIALIZE
 ===================================================== */
 
 try {
 
   setLoading(
-    10
+    5,
+    "レンダラーを準備しています..."
   );
 
 
-  /* ===================================================
-     WORLD
-  =================================================== */
+  renderer =
+    createRenderer();
+
+
+  setLoading(
+    15,
+    "光と映像処理を準備しています..."
+  );
+
+
+  post =
+    createPostProcessing(
+      renderer,
+      scene,
+      camera
+    );
+
+
+  setLoading(
+    25,
+    "武林夜市を作っています..."
+  );
+
 
   world =
     createWorld(
@@ -138,13 +275,10 @@ try {
 
 
   setLoading(
-    60
+    70,
+    "プレイヤーを準備しています..."
   );
 
-
-  /* ===================================================
-     PLAYER
-  =================================================== */
 
   player =
     createPlayer(
@@ -153,38 +287,37 @@ try {
 
       renderer.domElement,
 
-      world.colliders,
+      world.colliders || [],
 
-      world.floorZones,
+      world.floorZones || [],
 
-      world.walkableObjects
+      world.walkableObjects || []
 
     );
 
 
   setLoading(
-    75
+    82,
+    "会話システムを準備しています..."
   );
 
-
-  /* ===================================================
-     DIALOGUE SYSTEM
-  =================================================== */
 
   dialogueSystem =
     createDialogueSystem();
 
 
-  /* ===================================================
-     INTERACTION SYSTEM
-  =================================================== */
+  setLoading(
+    90,
+    "NPCを準備しています..."
+  );
+
 
   interactionSystem =
     createInteractionSystem(
 
       player,
 
-      world.interactiveNPCs,
+      world.interactiveNPCs || [],
 
       dialogueSystem
 
@@ -192,49 +325,45 @@ try {
 
 
   setLoading(
-    100
+    100,
+    "完成"
   );
 
 
-  /* ===================================================
-     FINISH LOADING
-  =================================================== */
-
   setTimeout(
-    () => {
-
-      const loading =
-        document.getElementById(
-          "loadingScreen"
-        );
-
-
-      if (
-        loading
-      ) {
-
-        loading.style.display =
-          "none";
-
-      }
-
-    },
-
-    450
+    finishLoading,
+    350
   );
 
 }
 
-catch (
-  error
-) {
+catch (error) {
 
-  console.error(
+  showFatalError(
     error
   );
 
+}
 
-  showError();
+
+/* =====================================================
+   FINISH LOADING
+===================================================== */
+
+function finishLoading() {
+
+  const loading =
+    document.getElementById(
+      "loadingScreen"
+    );
+
+
+  if (loading) {
+
+    loading.style.display =
+      "none";
+
+  }
 
 }
 
@@ -255,46 +384,50 @@ const startButton =
   );
 
 
-startButton.addEventListener(
-  "click",
-  event => {
+if (startButton) {
 
-    event.stopPropagation();
+  startButton.addEventListener(
+    "click",
+    event => {
+
+      event.stopPropagation();
 
 
-    if (
-      player
-    ) {
+      if (player) {
 
-      player.lock();
+        player.lock();
+
+      }
 
     }
+  );
 
-  }
-);
+}
 
 
 /* =====================================================
-   POINTER LOCK
+   POINTER LOCK EVENTS
 ===================================================== */
 
-if (
-  player
-) {
+if (player) {
 
   player.controls.addEventListener(
     "lock",
     () => {
 
-      /*
-        Dialogueが開いていない場合のみ
-        start screenを消す。
-      */
-
       if (
-        !dialogueSystem ||
-        !dialogueSystem.isOpen()
+
+        dialogueSystem &&
+        dialogueSystem.isOpen()
+
       ) {
+
+        return;
+
+      }
+
+
+      if (startScreen) {
 
         startScreen.style.display =
           "none";
@@ -309,19 +442,19 @@ if (
     "unlock",
     () => {
 
-      /*
-        NPCとの会話のために
-        PointerLockを解除した場合は
-        start screenを表示しない。
-      */
-
       if (
+
         dialogueSystem &&
         dialogueSystem.isOpen()
+
       ) {
 
-        startScreen.style.display =
-          "none";
+        if (startScreen) {
+
+          startScreen.style.display =
+            "none";
+
+        }
 
 
         return;
@@ -329,8 +462,12 @@ if (
       }
 
 
-      startScreen.style.display =
-        "flex";
+      if (startScreen) {
+
+        startScreen.style.display =
+          "flex";
+
+      }
 
     }
   );
@@ -342,18 +479,52 @@ if (
    CANVAS CLICK
 ===================================================== */
 
-renderer.domElement.addEventListener(
-  "click",
-  () => {
+if (renderer) {
 
-    /*
-      Dialogue中は
-      PointerLockしない。
-    */
+  renderer.domElement.addEventListener(
+    "click",
+    () => {
+
+      if (
+
+        dialogueSystem &&
+        dialogueSystem.isOpen()
+
+      ) {
+
+        return;
+
+      }
+
+
+      if (
+
+        player &&
+        !player.controls.isLocked
+
+      ) {
+
+        player.lock();
+
+      }
+
+    }
+  );
+
+}
+
+
+/* =====================================================
+   ESC DIALOGUE
+===================================================== */
+
+window.addEventListener(
+  "keydown",
+  event => {
 
     if (
-      dialogueSystem &&
-      dialogueSystem.isOpen()
+      event.code !==
+      "Escape"
     ) {
 
       return;
@@ -362,39 +533,13 @@ renderer.domElement.addEventListener(
 
 
     if (
-      player &&
-      !player.controls.isLocked
+
+      dialogueSystem &&
+      dialogueSystem.isOpen()
+
     ) {
 
-      player.lock();
-
-    }
-
-  }
-);
-
-
-/* =====================================================
-   ESC / DIALOGUE
-===================================================== */
-
-window.addEventListener(
-  "keydown",
-  event => {
-
-    if (
-      event.code ===
-      "Escape"
-    ) {
-
-      if (
-        dialogueSystem &&
-        dialogueSystem.isOpen()
-      ) {
-
-        dialogueSystem.close();
-
-      }
+      dialogueSystem.close();
 
     }
 
@@ -412,9 +557,7 @@ let currentArea =
 
 function detectArea() {
 
-  if (
-    !player
-  ) {
+  if (!player) {
 
     return;
 
@@ -425,24 +568,17 @@ function detectArea() {
     player.getPosition();
 
 
-  const x =
-    position.x;
-
-
-  const z =
-    position.z;
-
-
   for (
-    const area of
-    AREAS
+    const area of AREAS
   ) {
 
     if (
-      x >= area.minX &&
-      x <= area.maxX &&
-      z >= area.minZ &&
-      z <= area.maxZ
+
+      position.x >= area.minX &&
+      position.x <= area.maxX &&
+      position.z >= area.minZ &&
+      position.z <= area.maxZ
+
     ) {
 
       if (
@@ -460,9 +596,7 @@ function detectArea() {
           );
 
 
-        if (
-          zone
-        ) {
+        if (zone) {
 
           zone.textContent =
             area.name;
@@ -490,7 +624,7 @@ function detectArea() {
    AREA POPUP
 ===================================================== */
 
-let popupTimer;
+let popupTimer = null;
 
 
 function showAreaPopup(
@@ -542,7 +676,6 @@ function showAreaPopup(
         );
 
       },
-
       2200
     );
 
@@ -550,7 +683,7 @@ function showAreaPopup(
 
 
 /* =====================================================
-   QUALITY SETTINGS
+   QUALITY
 ===================================================== */
 
 const qualityButtons =
@@ -601,10 +734,27 @@ function applyQuality(
   quality
 ) {
 
+  if (
+    !renderer ||
+    !post
+  ) {
+
+    return;
+
+  }
+
+
   const settings =
     CONFIG.quality[
       quality
     ];
+
+
+  if (!settings) {
+
+    return;
+
+  }
 
 
   renderer.setPixelRatio(
@@ -639,7 +789,7 @@ function applyQuality(
 
 
 /* =====================================================
-   FPS COUNTER
+   FPS
 ===================================================== */
 
 let fpsFrames =
@@ -665,50 +815,50 @@ function updateFPS() {
 
 
   if (
-    elapsed >=
-    500
+    elapsed < 500
   ) {
 
-    const fps =
-      Math.round(
-
-        fpsFrames *
-        1000 /
-        elapsed
-
-      );
-
-
-    const element =
-      document.getElementById(
-        "fps"
-      );
-
-
-    if (
-      element
-    ) {
-
-      element.textContent =
-        `FPS ${fps}`;
-
-    }
-
-
-    fpsFrames =
-      0;
-
-
-    fpsTime =
-      now;
+    return;
 
   }
+
+
+  const fps =
+    Math.round(
+
+      fpsFrames *
+      1000 /
+      elapsed
+
+    );
+
+
+  const element =
+    document.getElementById(
+      "fps"
+    );
+
+
+  if (element) {
+
+    element.textContent =
+      `FPS ${fps}`;
+
+  }
+
+
+  fpsFrames =
+    0;
+
+
+  fpsTime =
+    now;
 
 }
 
 
 /* =====================================================
-   WINDOW RESIZE
+   RESIZE
 ===================================================== */
 
 window.addEventListener(
@@ -724,13 +874,21 @@ window.addEventListener(
     camera.updateProjectionMatrix();
 
 
-    renderer.setSize(
-      window.innerWidth,
-      window.innerHeight
-    );
+    if (renderer) {
+
+      renderer.setSize(
+        window.innerWidth,
+        window.innerHeight
+      );
+
+    }
 
 
-    post.resize();
+    if (post) {
+
+      post.resize();
+
+    }
 
   }
 );
@@ -741,78 +899,65 @@ window.addEventListener(
 ===================================================== */
 
 function setLoading(
-  value
+  value,
+  message = ""
 ) {
 
-  const element =
+  const percent =
     document.getElementById(
       "loadingPercent"
     );
 
 
-  if (
-    element
-  ) {
+  if (percent) {
 
-    element.textContent =
+    percent.textContent =
       `${value}%`;
 
   }
 
-}
 
+  /*
+    Existing loading title/text.
 
-/* =====================================================
-   ERROR SCREEN
-===================================================== */
+    Works even if one of these
+    elements does not exist.
+  */
 
-function showError() {
+  const textCandidates = [
 
-  const loading =
     document.getElementById(
-      "loadingScreen"
-    );
+      "loadingText"
+    ),
+
+    document.querySelector(
+      "#loadingScreen .loading-text"
+    ),
+
+    document.querySelector(
+      "#loadingScreen p"
+    )
+
+  ];
 
 
-  const error =
-    document.getElementById(
-      "errorScreen"
-    );
-
-
-  if (
-    loading
+  for (
+    const element of textCandidates
   ) {
 
-    loading.style.display =
-      "none";
+    if (element) {
 
-  }
+      element.textContent =
+        message;
 
 
-  if (
-    error
-  ) {
+      break;
 
-    error.style.display =
-      "flex";
+    }
 
   }
 
 }
-
-
-window.addEventListener(
-  "error",
-  event => {
-
-    console.error(
-      event.error ||
-      event.message
-    );
-
-  }
-);
 
 
 /* =====================================================
@@ -830,6 +975,16 @@ function animate() {
   );
 
 
+  if (
+    !renderer ||
+    !post
+  ) {
+
+    return;
+
+  }
+
+
   const delta =
     Math.min(
       clock.getDelta(),
@@ -841,13 +996,7 @@ function animate() {
     clock.elapsedTime;
 
 
-  /* ===================================================
-     PLAYER
-  =================================================== */
-
-  if (
-    player
-  ) {
+  if (player) {
 
     player.update(
       delta
@@ -856,13 +1005,7 @@ function animate() {
   }
 
 
-  /* ===================================================
-     NPC INTERACTION
-  =================================================== */
-
-  if (
-    interactionSystem
-  ) {
+  if (interactionSystem) {
 
     interactionSystem.update(
       delta,
@@ -872,13 +1015,7 @@ function animate() {
   }
 
 
-  /* ===================================================
-     WORLD
-  =================================================== */
-
-  if (
-    world
-  ) {
+  if (world) {
 
     updateWorld(
       delta,
@@ -889,23 +1026,11 @@ function animate() {
   }
 
 
-  /* ===================================================
-     AREA
-  =================================================== */
-
   detectArea();
 
 
-  /* ===================================================
-     FPS
-  =================================================== */
-
   updateFPS();
 
-
-  /* ===================================================
-     RENDER
-  =================================================== */
 
   post.composer.render();
 
