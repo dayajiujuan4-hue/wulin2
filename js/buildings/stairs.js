@@ -8,14 +8,25 @@ export function createStairs(
 ) {
 
   const {
+
     x = 0,
     z = 0,
+
     width = 1.4,
+
     steps = 14,
+
     stepHeight = 0.2,
     stepDepth = 0.32,
+
     direction = "z",
-    reverse = false
+
+    reverse = false,
+
+    baseHeight = 0,
+
+    visual = true
+
   } = options;
 
 
@@ -29,100 +40,111 @@ export function createStairs(
   const totalHeight =
     steps * stepHeight;
 
+
   const totalLength =
     steps * stepDepth;
 
 
   /* =====================================================
-     VISIBLE STEPS
+     VISUAL STEPS
   ===================================================== */
 
-  for (
-    let i = 0;
-    i < steps;
-    i++
-  ) {
+  if (visual) {
 
-    const level =
-      reverse
-        ? steps - i
-        : i + 1;
-
-
-    const height =
-      level * stepHeight;
-
-
-    let px = x;
-    let pz = z;
-
-
-    if (
-      direction === "z"
+    for (
+      let i = 0;
+      i < steps;
+      i++
     ) {
 
-      pz =
-        z -
-        totalLength / 2 +
-        stepDepth / 2 +
-        i * stepDepth;
-
-    }
-
-    else {
-
-      px =
-        x -
-        totalLength / 2 +
-        stepDepth / 2 +
-        i * stepDepth;
-
-    }
+      const level =
+        reverse
+          ? steps - i
+          : i + 1;
 
 
-    const geometry =
-      direction === "z"
-
-        ? new THREE.BoxGeometry(
-            width,
-            height,
-            stepDepth
-          )
-
-        : new THREE.BoxGeometry(
-            stepDepth,
-            height,
-            width
-          );
+      const height =
+        level * stepHeight;
 
 
-    const step =
-      new THREE.Mesh(
-        geometry,
-        material
+      let px = x;
+      let pz = z;
+
+
+      if (
+        direction === "z"
+      ) {
+
+        pz =
+          z -
+          totalLength / 2 +
+          stepDepth / 2 +
+          i * stepDepth;
+
+      } else {
+
+        px =
+          x -
+          totalLength / 2 +
+          stepDepth / 2 +
+          i * stepDepth;
+
+      }
+
+
+      const geometry =
+        direction === "z"
+
+          ? new THREE.BoxGeometry(
+              width,
+              height,
+              stepDepth
+            )
+
+          : new THREE.BoxGeometry(
+              stepDepth,
+              height,
+              width
+            );
+
+
+      const step =
+        new THREE.Mesh(
+          geometry,
+          material
+        );
+
+
+      step.position.set(
+        px,
+        baseHeight + height / 2,
+        pz
       );
 
 
-    step.position.set(
-      px,
-      height / 2,
-      pz
-    );
+      step.receiveShadow =
+        true;
 
 
-    step.receiveShadow = true;
+      scene.add(step);
 
-    scene.add(step);
+    }
 
   }
 
 
   /* =====================================================
-     WALKABLE STAIR ZONE
-
-     見た目は階段。
-     プレイヤー判定は滑らかな坂道として扱う。
+     WALKABLE SLOPE
   ===================================================== */
+
+  const lowHeight =
+    baseHeight;
+
+
+  const highHeight =
+    baseHeight +
+    totalHeight;
+
 
   if (
     direction === "z"
@@ -146,22 +168,19 @@ export function createStairs(
 
       startHeight:
         reverse
-          ? totalHeight
-          : 0,
+          ? highHeight
+          : lowHeight,
 
       endHeight:
         reverse
-          ? 0
-          : totalHeight,
+          ? lowHeight
+          : highHeight,
 
-      axis:
-        "z"
+      axis: "z"
 
     });
 
-  }
-
-  else {
+  } else {
 
     floorZones.push({
 
@@ -181,16 +200,15 @@ export function createStairs(
 
       startHeight:
         reverse
-          ? totalHeight
-          : 0,
+          ? highHeight
+          : lowHeight,
 
       endHeight:
         reverse
-          ? 0
-          : totalHeight,
+          ? lowHeight
+          : highHeight,
 
-      axis:
-        "x"
+      axis: "x"
 
     });
 
