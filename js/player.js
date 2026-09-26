@@ -1,6 +1,10 @@
 import * as THREE from "three";
 
 import {
+  PointerLockControls
+} from "three/addons/controls/PointerLockControls.js";
+
+import {
   CONFIG
 } from "./config.js";
 
@@ -13,99 +17,38 @@ export function createPlayer(
   walkableObjects = []
 ) {
 
-  const keys = {};
+  /* =====================================================
+     POINTER LOCK CONTROLS
+  ===================================================== */
 
-  /*
-    FPS camera rig
-
-    yawObject   = 左右
-    pitchObject = 上下
-  */
-
-  const yawObject =
-    new THREE.Object3D();
-
-  const pitchObject =
-    new THREE.Object3D();
-
-
-  yawObject.add(
-    pitchObject
-  );
-
-
-  pitchObject.add(
-    camera
-  );
+  const controls =
+    new PointerLockControls(
+      camera,
+      domElement
+    );
 
 
   /*
-    Camera itself stays at local origin.
+    PointerLockControlsが
+    camera.rotationを管理する。
+
+    これ以降、自前でyaw/pitchを
+    cameraへ書き込まない。
   */
 
   camera.position.set(
-    0,
-    0,
-    0
-  );
-
-
-  yawObject.position.set(
     0,
     CONFIG.player.height,
     22
   );
 
 
-  let currentFloorHeight =
-    0;
-
-
-  let headBob =
-    0;
-
-
-  /*
-    Mouse smoothing
-  */
-
-  let targetYaw =
-    0;
-
-  let targetPitch =
-    0;
-
-
-  let currentYaw =
-    0;
-
-  let currentPitch =
-    0;
-
-
-  /*
-    Raycaster
-  */
-
-  const raycaster =
-    new THREE.Raycaster();
-
-
-  const rayOrigin =
-    new THREE.Vector3();
-
-
-  const rayDirection =
-    new THREE.Vector3(
-      0,
-      -1,
-      0
-    );
-
-
   /* =====================================================
-     KEYBOARD
+     INPUT
   ===================================================== */
+
+  const keys = {};
+
 
   window.addEventListener(
     "keydown",
@@ -129,119 +72,51 @@ export function createPlayer(
   );
 
 
-  /* =====================================================
-     MOUSE LOOK
-  ===================================================== */
+  /*
+    フォーカスを失ったとき
+    キー押しっぱなし状態を解除
+  */
 
-  document.addEventListener(
-    "mousemove",
-    event => {
+  window.addEventListener(
+    "blur",
+    () => {
 
-      if (
-        document.pointerLockElement !==
-        domElement
+      for (
+        const key in keys
       ) {
 
-        return;
+        keys[key] =
+          false;
 
       }
-
-
-      const sensitivity =
-        0.0022;
-
-
-      targetYaw -=
-        event.movementX *
-        sensitivity;
-
-
-      targetPitch -=
-        event.movementY *
-        sensitivity;
-
-
-      targetPitch =
-        THREE.MathUtils.clamp(
-          targetPitch,
-          -1.48,
-          1.48
-        );
 
     }
   );
 
 
   /* =====================================================
-     COLLISION
+     FLOOR SYSTEM
   ===================================================== */
 
-  function collides(
-    x,
-    z
-  ) {
-
-    const radius =
-      CONFIG.player.radius;
+  let currentFloorHeight =
+    0;
 
 
-    for (
-      const collider of
-      colliders
-    ) {
-
-      const nearestX =
-        Math.max(
-          collider.minX,
-          Math.min(
-            x,
-            collider.maxX
-          )
-        );
+  const raycaster =
+    new THREE.Raycaster();
 
 
-      const nearestZ =
-        Math.max(
-          collider.minZ,
-          Math.min(
-            z,
-            collider.maxZ
-          )
-        );
+  const rayOrigin =
+    new THREE.Vector3();
 
 
-      const dx =
-        x -
-        nearestX;
+  const rayDirection =
+    new THREE.Vector3(
+      0,
+      -1,
+      0
+    );
 
-
-      const dz =
-        z -
-        nearestZ;
-
-
-      if (
-        dx * dx +
-        dz * dz
-        <
-        radius * radius
-      ) {
-
-        return true;
-
-      }
-
-    }
-
-
-    return false;
-
-  }
-
-
-  /* =====================================================
-     RAYCAST FLOOR
-  ===================================================== */
 
   function getRaycastFloor(
     x,
@@ -249,8 +124,8 @@ export function createPlayer(
   ) {
 
     if (
-      walkableObjects.length ===
-      0
+      !walkableObjects ||
+      walkableObjects.length === 0
     ) {
 
       return null;
@@ -260,7 +135,7 @@ export function createPlayer(
 
     rayOrigin.set(
       x,
-      yawObject.position.y + 2.5,
+      camera.position.y + 2.5,
       z
     );
 
@@ -272,7 +147,7 @@ export function createPlayer(
 
 
     raycaster.far =
-      6;
+      7;
 
 
     const hits =
@@ -283,8 +158,7 @@ export function createPlayer(
 
 
     if (
-      hits.length ===
-      0
+      hits.length === 0
     ) {
 
       return null;
@@ -298,7 +172,7 @@ export function createPlayer(
 
 
   /* =====================================================
-     STAIR FLOOR
+     STAIR HEIGHT
   ===================================================== */
 
   function getStairHeight(
@@ -307,7 +181,7 @@ export function createPlayer(
     z
   ) {
 
-    let progress;
+    let progress = 0;
 
 
     if (
@@ -323,7 +197,8 @@ export function createPlayer(
 
         /
 
-        (
+        Math.max(
+          0.001,
           zone.maxZ -
           zone.minZ
         );
@@ -341,7 +216,8 @@ export function createPlayer(
 
         /
 
-        (
+        Math.max(
+          0.001,
           zone.maxX -
           zone.minX
         );
@@ -375,13 +251,12 @@ export function createPlayer(
     z
   ) {
 
-    let best =
-      null;
-
+    /*
+      階段を最優先
+  */
 
     for (
-      const zone of
-      floorZones
+      const zone of floorZones
     ) {
 
       if (
@@ -397,8 +272,7 @@ export function createPlayer(
 
 
       if (
-        zone.type ===
-        "stairs"
+        zone.type === "stairs"
       ) {
 
         return getStairHeight(
@@ -406,6 +280,32 @@ export function createPlayer(
           x,
           z
         );
+
+      }
+
+    }
+
+
+    /*
+      通常床
+  */
+
+    let best =
+      null;
+
+
+    for (
+      const zone of floorZones
+    ) {
+
+      if (
+        x < zone.minX ||
+        x > zone.maxX ||
+        z < zone.minZ ||
+        z > zone.maxZ
+      ) {
+
+        continue;
 
       }
 
@@ -428,8 +328,7 @@ export function createPlayer(
 
 
       if (
-        difference <
-        0.9
+        difference <= 1.05
       ) {
 
         if (
@@ -452,45 +351,17 @@ export function createPlayer(
   }
 
 
-  /* =====================================================
-     RESOLVE FLOOR
-  ===================================================== */
-
   function resolveFloor(
     x,
     z
   ) {
 
-    const rayFloor =
-      getRaycastFloor(
-        x,
-        z
-      );
+    /*
+      現在は階段Zoneを優先。
 
-
-    if (
-      rayFloor !== null
-    ) {
-
-      /*
-        Avoid suddenly snapping to
-        geometry far above/below player.
-      */
-
-      if (
-        Math.abs(
-          rayFloor -
-          currentFloorHeight
-        ) <
-        1.25
-      ) {
-
-        return rayFloor;
-
-      }
-
-    }
-
+      Raycaster移行途中なので、
+      これが一番安定する。
+  */
 
     const zoneFloor =
       getZoneFloor(
@@ -508,9 +379,116 @@ export function createPlayer(
     }
 
 
+    const rayFloor =
+      getRaycastFloor(
+        x,
+        z
+      );
+
+
+    if (
+      rayFloor !== null
+    ) {
+
+      if (
+        Math.abs(
+          rayFloor -
+          currentFloorHeight
+        ) <= 1.2
+      ) {
+
+        return rayFloor;
+
+      }
+
+    }
+
+
     return 0;
 
   }
+
+
+  /* =====================================================
+     COLLISION
+  ===================================================== */
+
+  function collides(
+    x,
+    z
+  ) {
+
+    const radius =
+      CONFIG.player.radius;
+
+
+    for (
+      const collider of colliders
+    ) {
+
+      const nearestX =
+        THREE.MathUtils.clamp(
+          x,
+          collider.minX,
+          collider.maxX
+        );
+
+
+      const nearestZ =
+        THREE.MathUtils.clamp(
+          z,
+          collider.minZ,
+          collider.maxZ
+        );
+
+
+      const dx =
+        x -
+        nearestX;
+
+
+      const dz =
+        z -
+        nearestZ;
+
+
+      if (
+        dx * dx +
+        dz * dz
+        <
+        radius * radius
+      ) {
+
+        return true;
+
+      }
+
+    }
+
+
+    return false;
+
+  }
+
+
+  /* =====================================================
+     MOVEMENT VECTORS
+  ===================================================== */
+
+  const forward =
+    new THREE.Vector3();
+
+
+  const right =
+    new THREE.Vector3();
+
+
+  const movement =
+    new THREE.Vector3();
+
+
+  let bobTime =
+    0;
 
 
   /* =====================================================
@@ -522,54 +500,21 @@ export function createPlayer(
   ) {
 
     /*
-      Smooth mouse movement
+      PointerLockControlsが
+      視点を自動更新してくれるので、
+      ここではrotationを一切触らない。
   */
 
-    const lookSmooth =
-      1 -
-      Math.exp(
-        -22 *
-        delta
-      );
 
-
-    currentYaw =
-      THREE.MathUtils.lerp(
-        currentYaw,
-        targetYaw,
-        lookSmooth
-      );
-
-
-    currentPitch =
-      THREE.MathUtils.lerp(
-        currentPitch,
-        targetPitch,
-        lookSmooth
-      );
-
-
-    yawObject.rotation.y =
-      currentYaw;
-
-
-    pitchObject.rotation.x =
-      currentPitch;
-
-
-    /* =================================================
-       INPUT
-    ================================================= */
-
-    let inputX = 0;
-    let inputZ = 0;
+    let forwardInput = 0;
+    let sideInput = 0;
 
 
     if (
       keys["KeyW"]
     ) {
 
-      inputZ -= 1;
+      forwardInput += 1;
 
     }
 
@@ -578,16 +523,7 @@ export function createPlayer(
       keys["KeyS"]
     ) {
 
-      inputZ += 1;
-
-    }
-
-
-    if (
-      keys["KeyA"]
-    ) {
-
-      inputX -= 1;
+      forwardInput -= 1;
 
     }
 
@@ -596,75 +532,24 @@ export function createPlayer(
       keys["KeyD"]
     ) {
 
-      inputX += 1;
+      sideInput += 1;
 
     }
-
-
-    const inputLength =
-      Math.hypot(
-        inputX,
-        inputZ
-      );
 
 
     if (
-      inputLength > 0
+      keys["KeyA"]
     ) {
 
-      inputX /=
-        inputLength;
-
-      inputZ /=
-        inputLength;
+      sideInput -= 1;
 
     }
 
 
-    /* =================================================
-       MOVEMENT
-    ================================================= */
+    const moving =
 
-    const forwardX =
-      -Math.sin(
-        currentYaw
-      );
-
-
-    const forwardZ =
-      -Math.cos(
-        currentYaw
-      );
-
-
-    const rightX =
-      Math.cos(
-        currentYaw
-      );
-
-
-    const rightZ =
-      -Math.sin(
-        currentYaw
-      );
-
-
-    const moveX =
-
-      forwardX *
-      -inputZ +
-
-      rightX *
-      inputX;
-
-
-    const moveZ =
-
-      forwardZ *
-      -inputZ +
-
-      rightZ *
-      inputX;
+      forwardInput !== 0 ||
+      sideInput !== 0;
 
 
     const running =
@@ -681,56 +566,117 @@ export function createPlayer(
         : CONFIG.player.speed;
 
 
-    const distance =
-      speed *
-      delta;
+    /* =================================================
+       CAMERA DIRECTION
+    ================================================= */
+
+    camera.getWorldDirection(
+      forward
+    );
 
 
     /*
-      X collision
+      上下を見ると移動方向まで
+      上下しないようYを消す
   */
+
+    forward.y = 0;
+
+
+    if (
+      forward.lengthSq() >
+      0.0001
+    ) {
+
+      forward.normalize();
+
+    }
+
+
+    right
+      .crossVectors(
+        forward,
+        camera.up
+      )
+      .normalize();
+
+
+    movement.set(
+      0,
+      0,
+      0
+    );
+
+
+    movement.addScaledVector(
+      forward,
+      forwardInput
+    );
+
+
+    movement.addScaledVector(
+      right,
+      sideInput
+    );
+
+
+    if (
+      movement.lengthSq() >
+      1
+    ) {
+
+      movement.normalize();
+
+    }
+
+
+    movement.multiplyScalar(
+      speed *
+      delta
+    );
+
+
+    /* =================================================
+       X COLLISION
+    ================================================= */
 
     const nextX =
 
-      yawObject.position.x +
-
-      moveX *
-      distance;
+      camera.position.x +
+      movement.x;
 
 
     if (
       !collides(
         nextX,
-        yawObject.position.z
+        camera.position.z
       )
     ) {
 
-      yawObject.position.x =
+      camera.position.x =
         nextX;
 
     }
 
 
-    /*
-      Z collision
-  */
+    /* =================================================
+       Z COLLISION
+    ================================================= */
 
     const nextZ =
 
-      yawObject.position.z +
-
-      moveZ *
-      distance;
+      camera.position.z +
+      movement.z;
 
 
     if (
       !collides(
-        yawObject.position.x,
+        camera.position.x,
         nextZ
       )
     ) {
 
-      yawObject.position.z =
+      camera.position.z =
         nextZ;
 
     }
@@ -742,10 +688,14 @@ export function createPlayer(
 
     const targetFloor =
       resolveFloor(
-        yawObject.position.x,
-        yawObject.position.z
+        camera.position.x,
+        camera.position.z
       );
 
+
+    /*
+      階段はある程度素早く追従。
+  */
 
     currentFloorHeight =
       THREE.MathUtils.lerp(
@@ -753,7 +703,7 @@ export function createPlayer(
         targetFloor,
         Math.min(
           1,
-          delta * 18
+          delta * 22
         )
       );
 
@@ -762,69 +712,73 @@ export function createPlayer(
        HEAD BOB
     ================================================= */
 
-    let targetBob =
+    let bob =
       0;
 
 
     if (
-      inputLength > 0
+      moving &&
+      controls.isLocked
     ) {
 
-      const frequency =
-        running
-          ? 0.017
-          : 0.011;
+      bobTime +=
+
+        delta *
+
+        (
+          running
+            ? 13
+            : 9
+        );
 
 
-      const amplitude =
-        running
-          ? 0.025
-          : 0.014;
-
-
-      targetBob =
+      bob =
 
         Math.sin(
-          performance.now() *
-          frequency
-        ) *
+          bobTime
+        )
 
-        amplitude;
+        *
+
+        (
+          running
+            ? 0.025
+            : 0.012
+        );
 
     }
 
 
-    headBob =
-      THREE.MathUtils.lerp(
-        headBob,
-        targetBob,
-        Math.min(
-          1,
-          delta * 12
-        )
-      );
-
-
-    yawObject.position.y =
+    camera.position.y =
 
       CONFIG.player.height +
-
-      currentFloorHeight;
-
-
-    camera.position.y =
-      headBob;
+      currentFloorHeight +
+      bob;
 
   }
 
 
   /* =====================================================
-     POSITION ACCESS
+     PUBLIC
   ===================================================== */
+
+  function lock() {
+
+    controls.lock();
+
+  }
+
+
+  function unlock() {
+
+    controls.unlock();
+
+  }
+
 
   function getPosition() {
 
-    return yawObject.position;
+    return camera.position;
 
   }
 
@@ -833,8 +787,11 @@ export function createPlayer(
 
     update,
 
-    object:
-      yawObject,
+    controls,
+
+    lock,
+
+    unlock,
 
     getPosition
 
