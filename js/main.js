@@ -22,6 +22,14 @@ import {
   createPostProcessing
 } from "./effects/postprocessing.js";
 
+import {
+  createDialogueSystem
+} from "./interaction/dialogueSystem.js";
+
+import {
+  createInteractionSystem
+} from "./interaction/interactionSystem.js";
+
 
 /* =====================================================
    SCENE
@@ -50,11 +58,16 @@ scene.fog =
 
 const camera =
   new THREE.PerspectiveCamera(
+
     70,
+
     window.innerWidth /
     window.innerHeight,
+
     0.08,
+
     240
+
   );
 
 
@@ -84,7 +97,7 @@ const post =
 
 
 /* =====================================================
-   WORLD
+   GAME SYSTEMS
 ===================================================== */
 
 let world =
@@ -95,12 +108,28 @@ let player =
   null;
 
 
+let dialogueSystem =
+  null;
+
+
+let interactionSystem =
+  null;
+
+
+/* =====================================================
+   CREATE WORLD
+===================================================== */
+
 try {
 
   setLoading(
     10
   );
 
+
+  /* ===================================================
+     WORLD
+  =================================================== */
 
   world =
     createWorld(
@@ -109,17 +138,56 @@ try {
 
 
   setLoading(
-    65
+    60
   );
 
 
+  /* ===================================================
+     PLAYER
+  =================================================== */
+
   player =
     createPlayer(
+
       camera,
+
       renderer.domElement,
+
       world.colliders,
+
       world.floorZones,
+
       world.walkableObjects
+
+    );
+
+
+  setLoading(
+    75
+  );
+
+
+  /* ===================================================
+     DIALOGUE SYSTEM
+  =================================================== */
+
+  dialogueSystem =
+    createDialogueSystem();
+
+
+  /* ===================================================
+     INTERACTION SYSTEM
+  =================================================== */
+
+  interactionSystem =
+    createInteractionSystem(
+
+      player,
+
+      world.interactiveNPCs,
+
+      dialogueSystem
+
     );
 
 
@@ -127,6 +195,10 @@ try {
     100
   );
 
+
+  /* ===================================================
+     FINISH LOADING
+  =================================================== */
 
   setTimeout(
     () => {
@@ -183,11 +255,6 @@ const startButton =
   );
 
 
-/*
-  Start button only asks
-  PointerLockControls to lock.
-*/
-
 startButton.addEventListener(
   "click",
   event => {
@@ -208,7 +275,7 @@ startButton.addEventListener(
 
 
 /* =====================================================
-   POINTER LOCK EVENTS
+   POINTER LOCK
 ===================================================== */
 
 if (
@@ -219,8 +286,20 @@ if (
     "lock",
     () => {
 
-      startScreen.style.display =
-        "none";
+      /*
+        Dialogueが開いていない場合のみ
+        start screenを消す。
+      */
+
+      if (
+        !dialogueSystem ||
+        !dialogueSystem.isOpen()
+      ) {
+
+        startScreen.style.display =
+          "none";
+
+      }
 
     }
   );
@@ -229,6 +308,26 @@ if (
   player.controls.addEventListener(
     "unlock",
     () => {
+
+      /*
+        NPCとの会話のために
+        PointerLockを解除した場合は
+        start screenを表示しない。
+      */
+
+      if (
+        dialogueSystem &&
+        dialogueSystem.isOpen()
+      ) {
+
+        startScreen.style.display =
+          "none";
+
+
+        return;
+
+      }
+
 
       startScreen.style.display =
         "flex";
@@ -239,13 +338,28 @@ if (
 }
 
 
-/*
-  Click canvas to resume.
-*/
+/* =====================================================
+   CANVAS CLICK
+===================================================== */
 
 renderer.domElement.addEventListener(
   "click",
   () => {
+
+    /*
+      Dialogue中は
+      PointerLockしない。
+    */
+
+    if (
+      dialogueSystem &&
+      dialogueSystem.isOpen()
+    ) {
+
+      return;
+
+    }
+
 
     if (
       player &&
@@ -253,6 +367,34 @@ renderer.domElement.addEventListener(
     ) {
 
       player.lock();
+
+    }
+
+  }
+);
+
+
+/* =====================================================
+   ESC / DIALOGUE
+===================================================== */
+
+window.addEventListener(
+  "keydown",
+  event => {
+
+    if (
+      event.code ===
+      "Escape"
+    ) {
+
+      if (
+        dialogueSystem &&
+        dialogueSystem.isOpen()
+      ) {
+
+        dialogueSystem.close();
+
+      }
 
     }
 
@@ -292,7 +434,8 @@ function detectArea() {
 
 
   for (
-    const area of AREAS
+    const area of
+    AREAS
   ) {
 
     if (
@@ -407,7 +550,7 @@ function showAreaPopup(
 
 
 /* =====================================================
-   QUALITY
+   QUALITY SETTINGS
 ===================================================== */
 
 const qualityButtons =
@@ -467,8 +610,11 @@ function applyQuality(
   renderer.setPixelRatio(
 
     Math.min(
+
       window.devicePixelRatio,
+
       settings.pixelRatio
+
     )
 
   );
@@ -493,7 +639,7 @@ function applyQuality(
 
 
 /* =====================================================
-   FPS
+   FPS COUNTER
 ===================================================== */
 
 let fpsFrames =
@@ -519,14 +665,17 @@ function updateFPS() {
 
 
   if (
-    elapsed >= 500
+    elapsed >=
+    500
   ) {
 
     const fps =
       Math.round(
+
         fpsFrames *
         1000 /
         elapsed
+
       );
 
 
@@ -559,7 +708,7 @@ function updateFPS() {
 
 
 /* =====================================================
-   RESIZE
+   WINDOW RESIZE
 ===================================================== */
 
 window.addEventListener(
@@ -614,7 +763,7 @@ function setLoading(
 
 
 /* =====================================================
-   ERROR
+   ERROR SCREEN
 ===================================================== */
 
 function showError() {
@@ -692,6 +841,10 @@ function animate() {
     clock.elapsedTime;
 
 
+  /* ===================================================
+     PLAYER
+  =================================================== */
+
   if (
     player
   ) {
@@ -702,6 +855,26 @@ function animate() {
 
   }
 
+
+  /* ===================================================
+     NPC INTERACTION
+  =================================================== */
+
+  if (
+    interactionSystem
+  ) {
+
+    interactionSystem.update(
+      delta,
+      time
+    );
+
+  }
+
+
+  /* ===================================================
+     WORLD
+  =================================================== */
 
   if (
     world
@@ -716,10 +889,23 @@ function animate() {
   }
 
 
+  /* ===================================================
+     AREA
+  =================================================== */
+
   detectArea();
+
+
+  /* ===================================================
+     FPS
+  =================================================== */
 
   updateFPS();
 
+
+  /* ===================================================
+     RENDER
+  =================================================== */
 
   post.composer.render();
 
