@@ -1,7 +1,7 @@
 import * as THREE from "three";
 
 
-let particles;
+let particles = null;
 
 
 export function createAtmosphere(
@@ -10,6 +10,7 @@ export function createAtmosphere(
 
   const count =
     160;
+
 
   const positions =
     new Float32Array(
@@ -26,29 +27,34 @@ export function createAtmosphere(
     positions[
       i * 3
     ] =
-      -40 +
-      Math.random() *
-      80;
+      (
+        Math.random() -
+        0.5
+      ) *
+      90;
+
 
     positions[
       i * 3 + 1
     ] =
-      .5 +
+      0.8 +
       Math.random() *
-      5;
+      7;
+
 
     positions[
       i * 3 + 2
     ] =
-      20 -
+      25 -
       Math.random() *
-      145;
+      160;
 
   }
 
 
   const geometry =
     new THREE.BufferGeometry();
+
 
   geometry.setAttribute(
 
@@ -62,30 +68,31 @@ export function createAtmosphere(
   );
 
 
+  const material =
+    new THREE.PointsMaterial({
+
+      color:
+        0xffe3c0,
+
+      size:
+        0.035,
+
+      transparent:
+        true,
+
+      opacity:
+        0.22,
+
+      depthWrite:
+        false
+
+    });
+
+
   particles =
     new THREE.Points(
-
       geometry,
-
-      new THREE.PointsMaterial({
-
-        color:
-          0xffd7a4,
-
-        size:
-          .025,
-
-        transparent:
-          true,
-
-        opacity:
-          .16,
-
-        depthWrite:
-          false
-
-      })
-
+      material
     );
 
 
@@ -93,38 +100,30 @@ export function createAtmosphere(
     particles
   );
 
+
+  return particles;
+
 }
 
 
 export function updateAtmosphere(
   delta,
-  time,
-  camera
+  time
 ) {
 
   if (
     !particles
-  ) return;
+  ) {
+
+    return;
+
+  }
 
 
   particles.rotation.y =
     Math.sin(
-      time * .04
+      time * 0.04
     ) *
-    .002;
-
-
-  /*
-    Don't animate hundreds of
-    individual objects.
-    One particle object only.
-  */
-
-  particles.material.opacity =
-    .14 +
-    Math.sin(
-      time * .3
-    ) *
-    .015;
+    0.015;
 
 }
