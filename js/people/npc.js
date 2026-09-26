@@ -1,117 +1,126 @@
 import * as THREE from "three";
 
 
-/*
-=====================================================
-SHARED GEOMETRY
-
-全NPCでGeometryを共有することで
-メモリ消費を抑える。
-=====================================================
-*/
+/* =====================================================
+   SHARED GEOMETRIES
+===================================================== */
 
 const headGeometry =
   new THREE.SphereGeometry(
-    .115,
-    8,
-    6
+    0.13,
+    10,
+    8
   );
 
 const hairGeometry =
   new THREE.SphereGeometry(
-    .12,
-    8,
-    5,
+    0.135,
+    9,
+    6,
     0,
     Math.PI * 2,
     0,
-    Math.PI * .55
+    Math.PI * 0.55
   );
 
 const torsoGeometry =
-  new THREE.CapsuleGeometry(
-    .15,
-    .38,
-    3,
-    6
+  new THREE.BoxGeometry(
+    0.34,
+    0.55,
+    0.22
   );
 
 const armGeometry =
   new THREE.CapsuleGeometry(
-    .045,
-    .34,
-    2,
-    5
+    0.05,
+    0.35,
+    3,
+    6
   );
 
 const legGeometry =
   new THREE.CapsuleGeometry(
-    .055,
-    .42,
-    2,
-    5
+    0.06,
+    0.42,
+    3,
+    6
   );
 
 const shoeGeometry =
   new THREE.BoxGeometry(
-    .11,
-    .07,
-    .21
+    0.12,
+    0.08,
+    0.22
   );
 
 const eyeGeometry =
   new THREE.SphereGeometry(
-    .012,
+    0.014,
     5,
     4
   );
 
+const handGeometry =
+  new THREE.SphereGeometry(
+    0.047,
+    6,
+    4
+  );
 
-/*
-=====================================================
-COLORS
-=====================================================
-*/
+
+/* =====================================================
+   COLORS
+===================================================== */
 
 const skinColors = [
   0xf0c5a4,
-  0xe8b58f,
-  0xdca57f,
+  0xe6b18d,
+  0xd69b74,
   0xf2cdb0,
   0xc98d68
 ];
 
-const clothingColors = [
-  0x20242b,
-  0x374d69,
-  0x9c3934,
-  0xd4c9b4,
-  0x55755b,
-  0x715578,
-  0x404040,
-  0xbaa86f,
+const shirtColors = [
+  0xd9d9d9,
+  0xc4413b,
+  0x315c88,
+  0x4f7654,
+  0xe0b34e,
+  0x6e547e,
+  0x25282d,
+  0xcfc4ad,
   0xeeeeea,
-  0x263b55
+  0x35526e
 ];
 
-const trouserColors = [
-  0x15171b,
-  0x242b34,
-  0x383838,
-  0x243247,
-  0x5b5148
+const pantsColors = [
+  0x17191d,
+  0x263447,
+  0x444444,
+  0x554c44,
+  0x1d2530
 ];
 
 const hairColors = [
-  0x15110f,
-  0x211815,
-  0x32231c,
-  0x090909,
-  0x3a2a22
+  0x080808,
+  0x1b1512,
+  0x30231d,
+  0x141414
+];
+
+const bagColors = [
+  0x2c2c2c,
+  0x704934,
+  0xc3a77a,
+  0x35475d
 ];
 
 
-function choose(array) {
+/* =====================================================
+   HELPERS
+===================================================== */
+
+function pick(array) {
 
   return array[
     Math.floor(
@@ -123,77 +132,59 @@ function choose(array) {
 }
 
 
-function material(color) {
+function makeMaterial(color) {
 
   return new THREE.MeshStandardMaterial({
     color,
-    roughness: .82
+    roughness: 0.8
   });
 
 }
 
 
-/*
-=====================================================
-CREATE NPC
-=====================================================
-*/
+/* =====================================================
+   CREATE NPC
+===================================================== */
 
 export function createNPC(options = {}) {
 
-  const group =
+  const npc =
     new THREE.Group();
 
 
-  const heightScale =
-    options.heightScale ??
-    (
-      .91 +
-      Math.random() *
-      .18
-    );
-
+  /*
+    Materials
+  */
 
   const skinMaterial =
-    material(
-      choose(skinColors)
+    makeMaterial(
+      pick(skinColors)
     );
 
   const shirtMaterial =
-    material(
-      choose(clothingColors)
+    makeMaterial(
+      pick(shirtColors)
     );
 
-  const trouserMaterial =
-    material(
-      choose(trouserColors)
+  const pantsMaterial =
+    makeMaterial(
+      pick(pantsColors)
     );
 
   const hairMaterial =
-    material(
-      choose(hairColors)
+    makeMaterial(
+      pick(hairColors)
     );
 
   const shoeMaterial =
-    material(0x111214);
+    makeMaterial(
+      0x111111
+    );
 
 
-  /*
-    ROOT BODY
-  */
-
-  const body =
-    new THREE.Group();
-
-  body.scale.y =
-    heightScale;
-
-  group.add(body);
-
-
-  /*
-    TORSO
-  */
+  /* ===================================================
+     TORSO
+  =================================================== */
 
   const torso =
     new THREE.Mesh(
@@ -202,25 +193,24 @@ export function createNPC(options = {}) {
     );
 
   torso.position.y =
-    1.15;
+    1.18;
 
-  torso.castShadow =
-    false;
+  npc.add(
+    torso
+  );
 
-  body.add(torso);
 
-
-  /*
-    NECK
-  */
+  /* ===================================================
+     NECK
+  =================================================== */
 
   const neck =
     new THREE.Mesh(
 
       new THREE.CylinderGeometry(
-        .055,
-        .06,
-        .1,
+        0.055,
+        0.06,
+        0.1,
         6
       ),
 
@@ -229,14 +219,16 @@ export function createNPC(options = {}) {
     );
 
   neck.position.y =
-    1.48;
+    1.47;
 
-  body.add(neck);
+  npc.add(
+    neck
+  );
 
 
-  /*
-    HEAD
-  */
+  /* ===================================================
+     HEAD
+  =================================================== */
 
   const head =
     new THREE.Mesh(
@@ -245,14 +237,16 @@ export function createNPC(options = {}) {
     );
 
   head.position.y =
-    1.64;
+    1.62;
 
-  body.add(head);
+  npc.add(
+    head
+  );
 
 
-  /*
-    HAIR
-  */
+  /* ===================================================
+     HAIR
+  =================================================== */
 
   const hair =
     new THREE.Mesh(
@@ -260,50 +254,75 @@ export function createNPC(options = {}) {
       hairMaterial
     );
 
-  hair.position.set(
-    0,
-    1.68,
-    0
+  hair.position.y =
+    1.67;
+
+  npc.add(
+    hair
   );
 
-  body.add(hair);
 
-
-  /*
-    EYES
-
-    NPC forward = negative Z
-  */
+  /* ===================================================
+     FACE
+  =================================================== */
 
   const eyeMaterial =
     new THREE.MeshBasicMaterial({
-      color: 0x151515
+      color: 0x111111
     });
 
-  for (
-    const x of [-.04, .04]
-  ) {
 
-    const eye =
-      new THREE.Mesh(
-        eyeGeometry,
-        eyeMaterial
-      );
-
-    eye.position.set(
-      x,
-      1.65,
-      -.108
+  const leftEye =
+    new THREE.Mesh(
+      eyeGeometry,
+      eyeMaterial
     );
 
-    body.add(eye);
+  leftEye.position.set(
+    -0.045,
+    1.63,
+    -0.12
+  );
 
-  }
+  npc.add(
+    leftEye
+  );
 
 
-  /*
-    ARMS
-  */
+  const rightEye =
+    new THREE.Mesh(
+      eyeGeometry,
+      eyeMaterial
+    );
+
+  rightEye.position.set(
+    0.045,
+    1.63,
+    -0.12
+  );
+
+  npc.add(
+    rightEye
+  );
+
+
+  /* ===================================================
+     LEFT ARM
+  =================================================== */
+
+  const leftArmPivot =
+    new THREE.Group();
+
+  leftArmPivot.position.set(
+    -0.22,
+    1.38,
+    0
+  );
+
+  npc.add(
+    leftArmPivot
+  );
+
 
   const leftArm =
     new THREE.Mesh(
@@ -311,40 +330,13 @@ export function createNPC(options = {}) {
       shirtMaterial
     );
 
-  const rightArm =
-    new THREE.Mesh(
-      armGeometry,
-      shirtMaterial
-    );
+  leftArm.position.y =
+    -0.22;
 
-  leftArm.position.set(
-    -.205,
-    1.12,
-    0
+  leftArmPivot.add(
+    leftArm
   );
 
-  rightArm.position.set(
-    .205,
-    1.12,
-    0
-  );
-
-  body.add(
-    leftArm,
-    rightArm
-  );
-
-
-  /*
-    HANDS
-  */
-
-  const handGeometry =
-    new THREE.SphereGeometry(
-      .045,
-      6,
-      4
-    );
 
   const leftHand =
     new THREE.Mesh(
@@ -352,67 +344,127 @@ export function createNPC(options = {}) {
       skinMaterial
     );
 
+  leftHand.position.y =
+    -0.46;
+
+  leftArmPivot.add(
+    leftHand
+  );
+
+
+  /* ===================================================
+     RIGHT ARM
+  =================================================== */
+
+  const rightArmPivot =
+    new THREE.Group();
+
+  rightArmPivot.position.set(
+    0.22,
+    1.38,
+    0
+  );
+
+  npc.add(
+    rightArmPivot
+  );
+
+
+  const rightArm =
+    new THREE.Mesh(
+      armGeometry,
+      shirtMaterial
+    );
+
+  rightArm.position.y =
+    -0.22;
+
+  rightArmPivot.add(
+    rightArm
+  );
+
+
   const rightHand =
     new THREE.Mesh(
       handGeometry,
       skinMaterial
     );
 
-  leftHand.position.set(
-    -.205,
-    .88,
-    0
-  );
+  rightHand.position.y =
+    -0.46;
 
-  rightHand.position.set(
-    .205,
-    .88,
-    0
-  );
-
-  body.add(
-    leftHand,
+  rightArmPivot.add(
     rightHand
   );
 
 
-  /*
-    LEGS
-  */
+  /* ===================================================
+     LEFT LEG
+  =================================================== */
+
+  const leftLegPivot =
+    new THREE.Group();
+
+  leftLegPivot.position.set(
+    -0.09,
+    0.88,
+    0
+  );
+
+  npc.add(
+    leftLegPivot
+  );
+
 
   const leftLeg =
     new THREE.Mesh(
       legGeometry,
-      trouserMaterial
+      pantsMaterial
     );
+
+  leftLeg.position.y =
+    -0.27;
+
+  leftLegPivot.add(
+    leftLeg
+  );
+
+
+  /* ===================================================
+     RIGHT LEG
+  =================================================== */
+
+  const rightLegPivot =
+    new THREE.Group();
+
+  rightLegPivot.position.set(
+    0.09,
+    0.88,
+    0
+  );
+
+  npc.add(
+    rightLegPivot
+  );
+
 
   const rightLeg =
     new THREE.Mesh(
       legGeometry,
-      trouserMaterial
+      pantsMaterial
     );
 
-  leftLeg.position.set(
-    -.085,
-    .55,
-    0
-  );
+  rightLeg.position.y =
+    -0.27;
 
-  rightLeg.position.set(
-    .085,
-    .55,
-    0
-  );
-
-  body.add(
-    leftLeg,
+  rightLegPivot.add(
     rightLeg
   );
 
 
-  /*
-    SHOES
-  */
+  /* ===================================================
+     SHOES
+  =================================================== */
 
   const leftShoe =
     new THREE.Mesh(
@@ -420,79 +472,82 @@ export function createNPC(options = {}) {
       shoeMaterial
     );
 
+  leftShoe.position.set(
+    -0.09,
+    0.29,
+    -0.04
+  );
+
+  npc.add(
+    leftShoe
+  );
+
+
   const rightShoe =
     new THREE.Mesh(
       shoeGeometry,
       shoeMaterial
     );
 
-  leftShoe.position.set(
-    -.085,
-    .25,
-    -.035
-  );
-
   rightShoe.position.set(
-    .085,
-    .25,
-    -.035
+    0.09,
+    0.29,
+    -0.04
   );
 
-  body.add(
-    leftShoe,
+  npc.add(
     rightShoe
   );
 
 
-  /*
-    BAG
+  /* ===================================================
+     BAG
+  =================================================== */
 
-    一部NPCだけバッグを持つ
-  */
+  let bag = null;
+
 
   if (
     Math.random() <
-    .32
+    0.3
   ) {
 
-    const bag =
+    bag =
       new THREE.Mesh(
 
         new THREE.BoxGeometry(
-          .16,
-          .2,
-          .08
+          0.16,
+          0.21,
+          0.08
         ),
 
-        material(
-          choose([
-            0x2c2c2c,
-            0x704934,
-            0xc3a77a,
-            0x35475d
-          ])
+        makeMaterial(
+          pick(bagColors)
         )
 
       );
 
+
     bag.position.set(
-      .2,
-      .98,
-      .1
+      0.2,
+      1.03,
+      0.11
     );
 
-    body.add(bag);
+
+    npc.add(
+      bag
+    );
 
   }
 
 
-  /*
-    PHONE
-
-    photo NPC用
-  */
+  /* ===================================================
+     PHONE
+  =================================================== */
 
   let phone = null;
+
 
   if (
     options.phone
@@ -502,90 +557,98 @@ export function createNPC(options = {}) {
       new THREE.Mesh(
 
         new THREE.BoxGeometry(
-          .065,
-          .12,
-          .012
+          0.07,
+          0.13,
+          0.018
         ),
 
         new THREE.MeshStandardMaterial({
-          color: 0x111319,
-          metalness: .4
+          color: 0x11151b,
+          metalness: 0.5,
+          roughness: 0.35
         })
 
       );
 
+
     phone.position.set(
-      .12,
+      0.12,
       1.42,
-      -.19
+      -0.2
     );
 
-    body.add(phone);
+
+    npc.add(
+      phone
+    );
 
   }
 
 
-  /*
-    LOD-ish detail control
+  /* ===================================================
+     RANDOM HEIGHT
+  =================================================== */
 
-    完全なTHREE.LODではなく、
-    距離によって細かいパーツを消す。
-    こちらの方が既存アニメーションと
-    組み合わせやすい。
-  */
-
-  const detailParts = [
-    hair,
-    neck,
-    leftHand,
-    rightHand,
-    leftShoe,
-    rightShoe
-  ];
+  const scale =
+    0.92 +
+    Math.random() *
+    0.16;
 
 
-  /*
-    ANIMATION DATA
-  */
+  npc.scale.setScalar(
+    scale
+  );
 
-  group.userData = {
 
-    body,
+  /* ===================================================
+     USER DATA
+  =================================================== */
 
-    torso,
+  npc.userData = {
 
     head,
+    hair,
 
-    leftArm,
-    rightArm,
+    leftEye,
+    rightEye,
 
-    leftLeg,
-    rightLeg,
+    leftArm:
+      leftArmPivot,
 
-    detailParts,
+    rightArm:
+      rightArmPivot,
 
+    leftLeg:
+      leftLegPivot,
+
+    rightLeg:
+      rightLegPivot,
+
+    leftHand,
+    rightHand,
+
+    leftShoe,
+    rightShoe,
+
+    bag,
     phone,
 
     walkPhase:
       Math.random() *
       Math.PI *
-      2,
-
-    heightScale
+      2
 
   };
 
 
-  return group;
+  return npc;
 
 }
 
 
-/*
-=====================================================
-ANIMATION
-=====================================================
-*/
+/* =====================================================
+   WALK / IDLE ANIMATION
+===================================================== */
 
 export function animateNPC(
   npc,
@@ -597,20 +660,41 @@ export function animateNPC(
   const data =
     npc.userData;
 
-  if (!data) return;
+
+  if (
+    !data
+  ) {
+
+    return;
+
+  }
 
 
-  if (moving) {
+  if (
+    moving
+  ) {
 
-    const cycle =
+    const phase =
+
       time *
-      7 *
+      6 *
       speed +
+
       data.walkPhase;
 
+
     const swing =
-      Math.sin(cycle) *
-      .42;
+
+      Math.sin(
+        phase
+      ) *
+
+      0.45;
+
+
+    /*
+      Arms
+  */
 
     data.leftArm.rotation.x =
       swing;
@@ -618,93 +702,187 @@ export function animateNPC(
     data.rightArm.rotation.x =
       -swing;
 
+
+    /*
+      Legs
+  */
+
     data.leftLeg.rotation.x =
-      -swing * .7;
+      -swing *
+      0.65;
 
     data.rightLeg.rotation.x =
-      swing * .7;
+      swing *
+      0.65;
 
-    data.body.position.y =
+
+    /*
+      Walking bounce
+  */
+
+    npc.position.y =
+
       Math.abs(
-        Math.sin(cycle * 2)
-      ) * .015;
+        Math.sin(
+          phase * 2
+        )
+      ) *
+
+      0.012;
 
   }
 
   else {
 
-    const idle =
-      Math.sin(
-        time * 1.5 +
-        data.walkPhase
-      );
+    /*
+      Smoothly return arms
+      to idle pose.
+  */
 
     data.leftArm.rotation.x *=
-      .9;
+      0.9;
 
     data.rightArm.rotation.x *=
-      .9;
+      0.9;
 
-    data.leftLeg.rotation.x *=
-      .9;
 
-    data.rightLeg.rotation.x *=
-      .9;
-
-    data.body.position.y =
-      idle * .004;
+    /*
+      Do NOT reset leg rotations here.
+      Seated NPCs use custom leg poses.
+  */
 
   }
 
 }
 
 
-/*
-=====================================================
-DISTANCE DETAIL
-=====================================================
-*/
+/* =====================================================
+   DETAIL CONTROL
+===================================================== */
 
 export function updateNPCDetail(
   npc,
   camera
 ) {
 
-  const distance =
-    npc.position.distanceTo(
-      camera.position
-    );
-
-  const data =
-    npc.userData;
-
-
   /*
-    Very far NPC:
-    entire NPC hidden.
+    IMPORTANT
+
+    For this stable version,
+    NPC itself is never hidden.
+
+    This prevents the previous
+    "everyone disappeared" problem.
   */
 
   npc.visible =
-    distance < 58;
+    true;
 
-  if (!npc.visible)
-    return;
+
+  const dx =
+
+    npc.position.x -
+    camera.position.x;
+
+
+  const dz =
+
+    npc.position.z -
+    camera.position.z;
+
+
+  const distanceSquared =
+
+    dx * dx +
+    dz * dz;
 
 
   /*
-    Hair/hands/shoes disappear
-    in the distance.
+    Small details disappear
+    only when far away.
   */
 
   const detailed =
-    distance < 23;
 
-  for (
-    const part of
-    data.detailParts
+    distanceSquared <
+    30 * 30;
+
+
+  if (
+    npc.userData.hair
   ) {
 
-    part.visible =
+    npc.userData.hair.visible =
+      detailed;
+
+  }
+
+
+  if (
+    npc.userData.leftEye
+  ) {
+
+    npc.userData.leftEye.visible =
+      detailed;
+
+  }
+
+
+  if (
+    npc.userData.rightEye
+  ) {
+
+    npc.userData.rightEye.visible =
+      detailed;
+
+  }
+
+
+  if (
+    npc.userData.leftHand
+  ) {
+
+    npc.userData.leftHand.visible =
+      detailed;
+
+  }
+
+
+  if (
+    npc.userData.rightHand
+  ) {
+
+    npc.userData.rightHand.visible =
+      detailed;
+
+  }
+
+
+  if (
+    npc.userData.leftShoe
+  ) {
+
+    npc.userData.leftShoe.visible =
+      detailed;
+
+  }
+
+
+  if (
+    npc.userData.rightShoe
+  ) {
+
+    npc.userData.rightShoe.visible =
+      detailed;
+
+  }
+
+
+  if (
+    npc.userData.bag
+  ) {
+
+    npc.userData.bag.visible =
       detailed;
 
   }
