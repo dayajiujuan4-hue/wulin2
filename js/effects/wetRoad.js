@@ -15,217 +15,266 @@ export function createWetRoad(
 
 
   /*
-    Main wet surface
+    Wet asphalt material
   */
 
-  const roadMaterial =
+  const wetMaterial =
     new THREE.MeshStandardMaterial({
 
       color:
-        0x161a1e,
+        0x11171d,
 
       roughness:
-        0.22,
+        0.28,
 
       metalness:
-        0.12,
+        0.18,
 
       transparent:
         true,
 
       opacity:
-        0.62
+        0.58
 
     });
 
 
-  const mainRoad =
-    new THREE.Mesh(
+  function createSurface(
+    x,
+    z,
+    width,
+    length
+  ) {
 
-      new THREE.PlaneGeometry(
-        11.5,
-        88
-      ),
+    const surface =
+      new THREE.Mesh(
 
-      roadMaterial
+        new THREE.PlaneGeometry(
+          width,
+          length
+        ),
 
+        wetMaterial.clone()
+
+      );
+
+
+    surface.rotation.x =
+      -Math.PI / 2;
+
+
+    surface.position.set(
+      x,
+      0.014,
+      z
     );
 
 
-  mainRoad.rotation.x =
-    -Math.PI / 2;
+    surface.receiveShadow =
+      true;
 
 
-  mainRoad.position.set(
+    group.add(
+      surface
+    );
+
+
+    return surface;
+
+  }
+
+
+  /*
+    Roads
+  */
+
+  createSurface(
     0,
-    0.012,
-    -21
+    -21,
+    11.4,
+    88
   );
 
 
-  group.add(
-    mainRoad
-  );
-
-
-  /*
-    Central plaza
-  */
-
-  const plaza =
-    new THREE.Mesh(
-
-      new THREE.PlaneGeometry(
-        26,
-        24
-      ),
-
-      roadMaterial.clone()
-
-    );
-
-
-  plaza.rotation.x =
-    -Math.PI / 2;
-
-
-  plaza.position.set(
+  createSurface(
     0,
-    0.013,
-    -64
-  );
-
-
-  group.add(
-    plaza
-  );
-
-
-  /*
-    Food alley
-  */
-
-  const food =
-    new THREE.Mesh(
-
-      new THREE.PlaneGeometry(
-        27,
-        9
-      ),
-
-      roadMaterial.clone()
-
-    );
-
-
-  food.rotation.x =
-    -Math.PI / 2;
-
-
-  food.position.set(
-    -24,
-    0.013,
-    -65
-  );
-
-
-  group.add(
-    food
-  );
-
-
-  /*
-    Creative street
-  */
-
-  const creative =
-    new THREE.Mesh(
-
-      new THREE.PlaneGeometry(
-        11,
-        39
-      ),
-
-      roadMaterial.clone()
-
-    );
-
-
-  creative.rotation.x =
-    -Math.PI / 2;
-
-
-  creative.position.set(
-    0,
-    0.013,
-    -99
-  );
-
-
-  group.add(
-    creative
-  );
-
-
-  /*
-    Back alley
-  */
-
-  const alley =
-    new THREE.Mesh(
-
-      new THREE.PlaneGeometry(
-        7,
-        58
-      ),
-
-      roadMaterial.clone()
-
-    );
-
-
-  alley.rotation.x =
-    -Math.PI / 2;
-
-
-  alley.position.set(
+    -64,
     27,
-    0.013,
-    -21
+    24
   );
 
 
-  group.add(
-    alley
+  createSurface(
+    -24,
+    -65,
+    27,
+    9
+  );
+
+
+  createSurface(
+    -31,
+    -74,
+    14,
+    18
+  );
+
+
+  createSurface(
+    25,
+    -65,
+    30,
+    18
+  );
+
+
+  createSurface(
+    0,
+    -99,
+    11,
+    39
+  );
+
+
+  createSurface(
+    27,
+    -21,
+    7,
+    58
   );
 
 
   /*
-    Neon reflection streaks
+    PUDDLES
   */
 
-  const colors = [
+  const puddleMaterial =
+    new THREE.MeshPhysicalMaterial({
 
-    0xff285f,
-    0x2aaeff,
-    0xff9a32,
-    0xff35c8,
-    0x32e8c1
+      color:
+        0x17202a,
+
+      roughness:
+        0.08,
+
+      metalness:
+        0.15,
+
+      clearcoat:
+        1,
+
+      clearcoatRoughness:
+        0.08,
+
+      transparent:
+        true,
+
+      opacity:
+        0.48
+
+    });
+
+
+  for (
+    let i = 0;
+    i < 18;
+    i++
+  ) {
+
+    const puddle =
+      new THREE.Mesh(
+
+        new THREE.CircleGeometry(
+          0.4 +
+          Math.random() *
+          1.2,
+          20
+        ),
+
+        puddleMaterial
+
+      );
+
+
+    puddle.scale.x =
+      0.5 +
+      Math.random() *
+      1.8;
+
+
+    puddle.rotation.x =
+      -Math.PI / 2;
+
+
+    puddle.rotation.z =
+      Math.random() *
+      Math.PI;
+
+
+    puddle.position.set(
+
+      -4.5 +
+      Math.random() *
+      9,
+
+      0.027,
+
+      12 -
+      Math.random() *
+      78
+
+    );
+
+
+    group.add(
+      puddle
+    );
+
+  }
+
+
+  /*
+    NEON REFLECTIONS
+  */
+
+  const neonColors = [
+
+    0xff234f,
+
+    0x20a8ff,
+
+    0xff8a25,
+
+    0xff29c6,
+
+    0x25e4bb
 
   ];
 
 
   for (
     let i = 0;
-    i < 28;
+    i < 38;
     i++
   ) {
 
     const color =
-      colors[
+      neonColors[
         i %
-        colors.length
+        neonColors.length
       ];
+
+
+    const width =
+      0.18 +
+      Math.random() *
+      0.85;
+
+
+    const length =
+      1.2 +
+      Math.random() *
+      5.5;
 
 
     const material =
@@ -237,10 +286,9 @@ export function createWetRoad(
           true,
 
         opacity:
-          0.07 +
-
+          0.045 +
           Math.random() *
-          0.06,
+          0.07,
 
         blending:
           THREE.AdditiveBlending,
@@ -249,18 +297,6 @@ export function createWetRoad(
           false
 
       });
-
-
-    const width =
-      0.25 +
-      Math.random() *
-      1.1;
-
-
-    const length =
-      1.5 +
-      Math.random() *
-      5;
 
 
     const reflection =
@@ -286,9 +322,9 @@ export function createWetRoad(
       Math.random() *
       9,
 
-      0.025,
+      0.031,
 
-      13 -
+      12 -
       Math.random() *
       78
 
@@ -297,6 +333,90 @@ export function createWetRoad(
 
     group.add(
       reflection
+    );
+
+  }
+
+
+  /*
+    Tiny reflected fragments
+
+    Makes reflections less like
+    perfect rectangles.
+  */
+
+  for (
+    let i = 0;
+    i < 55;
+    i++
+  ) {
+
+    const color =
+      neonColors[
+        Math.floor(
+          Math.random() *
+          neonColors.length
+        )
+      ];
+
+
+    const fragment =
+      new THREE.Mesh(
+
+        new THREE.PlaneGeometry(
+
+          0.08 +
+          Math.random() *
+          0.35,
+
+          0.15 +
+          Math.random() *
+          0.8
+
+        ),
+
+        new THREE.MeshBasicMaterial({
+
+          color,
+
+          transparent:
+            true,
+
+          opacity:
+            0.04,
+
+          blending:
+            THREE.AdditiveBlending,
+
+          depthWrite:
+            false
+
+        })
+
+      );
+
+
+    fragment.rotation.x =
+      -Math.PI / 2;
+
+
+    fragment.position.set(
+
+      -5 +
+      Math.random() *
+      10,
+
+      0.033,
+
+      14 -
+      Math.random() *
+      82
+
+    );
+
+
+    group.add(
+      fragment
     );
 
   }
