@@ -1,7 +1,9 @@
 import * as THREE from "three";
 
 
-export function createInteractiveNPCs(scene) {
+export function createInteractiveNPCs(
+  scene
+) {
 
   const npcs = [];
 
@@ -70,28 +72,12 @@ function createNPC(
   );
 
 
-  root.userData.interactiveNPC =
-    true;
+  scene.add(
+    root
+  );
 
 
-  root.userData.npcId =
-    data.id;
-
-
-  root.userData.name =
-    data.name;
-
-
-  root.userData.role =
-    data.role;
-
-
-  scene.add(root);
-
-
-  /*
-    Legs
-  */
+  /* LEGS */
 
   const pants =
     new THREE.MeshStandardMaterial({
@@ -100,7 +86,10 @@ function createNPC(
     });
 
 
-  for (const x of [-0.14, 0.14]) {
+  for (
+    const x of
+    [-0.14, 0.14]
+  ) {
 
     const leg =
       new THREE.Mesh(
@@ -124,14 +113,14 @@ function createNPC(
     );
 
 
-    root.add(leg);
+    root.add(
+      leg
+    );
 
   }
 
 
-  /*
-    Body
-  */
+  /* BODY */
 
   const body =
     new THREE.Mesh(
@@ -155,12 +144,12 @@ function createNPC(
     1.15;
 
 
-  root.add(body);
+  root.add(
+    body
+  );
 
 
-  /*
-    Head
-  */
+  /* HEAD */
 
   const head =
     new THREE.Mesh(
@@ -183,12 +172,12 @@ function createNPC(
     1.78;
 
 
-  root.add(head);
+  root.add(
+    head
+  );
 
 
-  /*
-    Hair
-  */
+  /* HAIR */
 
   const hair =
     new THREE.Mesh(
@@ -214,20 +203,19 @@ function createNPC(
     1.83;
 
 
-  root.add(hair);
+  root.add(
+    hair
+  );
 
 
-  /*
-    Floating interaction marker
-  */
+  /* INTERACTION MARKER */
 
   const marker =
     new THREE.Mesh(
 
-      new THREE.SphereGeometry(
-        0.065,
-        10,
-        8
+      new THREE.OctahedronGeometry(
+        0.1,
+        0
       ),
 
       new THREE.MeshBasicMaterial({
@@ -239,22 +227,29 @@ function createNPC(
 
 
   marker.position.y =
-    2.28;
+    2.3;
 
 
-  marker.userData.marker =
-    true;
-
-
-  root.add(marker);
+  root.add(
+    marker
+  );
 
 
   npcs.push({
+
+    id:
+      data.id,
+
+    name:
+      data.name,
+
+    role:
+      data.role,
+
     root,
-    marker,
-    id: data.id,
-    name: data.name,
-    role: data.role
+
+    marker
+
   });
 
 }
