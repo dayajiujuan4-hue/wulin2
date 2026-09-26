@@ -58,6 +58,11 @@ const camera =
   );
 
 
+scene.add(
+  camera
+);
+
+
 /* =====================================================
    RENDERER
 ===================================================== */
@@ -82,14 +87,19 @@ const post =
    WORLD
 ===================================================== */
 
-let world = null;
+let world =
+  null;
 
-let player = null;
+
+let player =
+  null;
 
 
 try {
 
-  setLoading(10);
+  setLoading(
+    10
+  );
 
 
   world =
@@ -98,7 +108,9 @@ try {
     );
 
 
-  setLoading(65);
+  setLoading(
+    65
+  );
 
 
   player =
@@ -111,19 +123,9 @@ try {
     );
 
 
-  /*
-    IMPORTANT
-
-    Camera is inside the
-    player camera rig.
-  */
-
-  scene.add(
-    player.object
+  setLoading(
+    100
   );
-
-
-  setLoading(100);
 
 
   setTimeout(
@@ -145,6 +147,7 @@ try {
       }
 
     },
+
     450
   );
 
@@ -158,13 +161,14 @@ catch (
     error
   );
 
+
   showError();
 
 }
 
 
 /* =====================================================
-   POINTER LOCK
+   START SCREEN
 ===================================================== */
 
 const startScreen =
@@ -179,37 +183,64 @@ const startButton =
   );
 
 
-function lockPointer() {
-
-  if (
-    document.pointerLockElement ===
-    renderer.domElement
-  ) {
-
-    return;
-
-  }
-
-
-  renderer.domElement
-    .requestPointerLock();
-
-}
-
+/*
+  Start button only asks
+  PointerLockControls to lock.
+*/
 
 startButton.addEventListener(
   "click",
-  () => {
+  event => {
 
-    lockPointer();
+    event.stopPropagation();
+
+
+    if (
+      player
+    ) {
+
+      player.lock();
+
+    }
 
   }
 );
 
 
+/* =====================================================
+   POINTER LOCK EVENTS
+===================================================== */
+
+if (
+  player
+) {
+
+  player.controls.addEventListener(
+    "lock",
+    () => {
+
+      startScreen.style.display =
+        "none";
+
+    }
+  );
+
+
+  player.controls.addEventListener(
+    "unlock",
+    () => {
+
+      startScreen.style.display =
+        "flex";
+
+    }
+  );
+
+}
+
+
 /*
-  Also allow canvas click
-  to resume the game.
+  Click canvas to resume.
 */
 
 renderer.domElement.addEventListener(
@@ -217,41 +248,11 @@ renderer.domElement.addEventListener(
   () => {
 
     if (
-      document.pointerLockElement !==
-      renderer.domElement
+      player &&
+      !player.controls.isLocked
     ) {
 
-      lockPointer();
-
-    }
-
-  }
-);
-
-
-document.addEventListener(
-  "pointerlockchange",
-  () => {
-
-    const locked =
-
-      document.pointerLockElement ===
-      renderer.domElement;
-
-
-    if (
-      locked
-    ) {
-
-      startScreen.style.display =
-        "none";
-
-    }
-
-    else {
-
-      startScreen.style.display =
-        "flex";
+      player.lock();
 
     }
 
@@ -291,8 +292,7 @@ function detectArea() {
 
 
   for (
-    const area of
-    AREAS
+    const area of AREAS
   ) {
 
     if (
@@ -399,6 +399,7 @@ function showAreaPopup(
         );
 
       },
+
       2200
     );
 
@@ -495,7 +496,9 @@ function applyQuality(
    FPS
 ===================================================== */
 
-let fpsFrames = 0;
+let fpsFrames =
+  0;
+
 
 let fpsTime =
   performance.now();
