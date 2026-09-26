@@ -14,6 +14,14 @@ import {
   createPlayer
 } from "./player.js";
 
+import {
+  createRenderer
+} from "./core/renderer.js";
+
+import {
+  createPostProcessing
+} from "./effects/postprocessing.js";
+
 
 /* =====================================================
    SCENE
@@ -22,8 +30,12 @@ import {
 const scene =
   new THREE.Scene();
 
+
 scene.background =
-  new THREE.Color(0x07101c);
+  new THREE.Color(
+    0x07101c
+  );
+
 
 scene.fog =
   new THREE.FogExp2(
@@ -38,10 +50,16 @@ scene.fog =
 
 const camera =
   new THREE.PerspectiveCamera(
+
     68,
-    innerWidth / innerHeight,
-    .1,
-    180
+
+    window.innerWidth /
+    window.innerHeight,
+
+    0.1,
+
+    220
+
   );
 
 
@@ -50,140 +68,125 @@ const camera =
 ===================================================== */
 
 const renderer =
-  new THREE.WebGLRenderer({
-    antialias: true,
-    powerPreference: "high-performance"
-  });
-
-renderer.setSize(
-  innerWidth,
-  innerHeight
-);
-
-renderer.setPixelRatio(
-  Math.min(
-    devicePixelRatio,
-    CONFIG.quality.medium.pixelRatio
-  )
-);
-
-renderer.shadowMap.enabled = true;
-
-renderer.shadowMap.type =
-  THREE.PCFSoftShadowMap;
-
-renderer.outputColorSpace =
-  THREE.SRGBColorSpace;
-
-renderer.toneMapping =
-  THREE.ACESFilmicToneMapping;
-
-renderer.toneMappingExposure =
-  1.12;
-
-document.body.appendChild(
-  renderer.domElement
-);
+  createRenderer();
 
 
 /* =====================================================
-   ERROR HANDLING
+   POST PROCESSING
 ===================================================== */
 
-window.addEventListener(
-  "error",
-  event => {
-
-    const errorScreen =
-      document.querySelector("#errorScreen");
-
-    const errorText =
-      document.querySelector("#errorText");
-
-    errorText.textContent =
-      event.message || "不明なエラー";
-
-    errorScreen.style.display =
-      "flex";
-
-  }
-);
-
-
-/* =====================================================
-   LOADING
-===================================================== */
-
-const loadingBar =
-  document.querySelector("#loadingBar");
-
-function loading(percent) {
-
-  loadingBar.style.width =
-    `${percent}%`;
-
-}
-
-loading(15);
+const post =
+  createPostProcessing(
+    renderer,
+    scene,
+    camera
+  );
 
 
 /* =====================================================
    WORLD
 ===================================================== */
 
-const world =
-  createWorld(scene);
+let world;
 
-loading(75);
+let player;
 
 
-/* =====================================================
-   PLAYER
-===================================================== */
+try {
 
-const player =
-  createPlayer(
-    camera,
-    renderer.domElement,
-    world.colliders
+  setLoading(15);
+
+
+  world =
+    createWorld(
+      scene
+    );
+
+
+  setLoading(72);
+
+
+  player =
+    createPlayer(
+
+      camera,
+
+      renderer.domElement,
+
+      world.colliders,
+
+      world.floorZones,
+
+      world.walkableObjects
+
+    );
+
+
+  setLoading(100);
+
+
+  setTimeout(
+    () => {
+
+      const loading =
+        document.getElementById(
+          "loadingScreen"
+        );
+
+
+      if (loading) {
+
+        loading.style.display =
+          "none";
+
+      }
+
+    },
+
+    450
   );
 
-loading(100);
+}
+
+catch (
+  error
+) {
+
+  console.error(error);
+
+  showError();
+
+}
 
 
 /* =====================================================
    START
 ===================================================== */
 
-setTimeout(
+const startScreen =
+  document.getElementById(
+    "startScreen"
+  );
+
+
+const startButton =
+  document.getElementById(
+    "startButton"
+  );
+
+
+startButton.addEventListener(
+  "click",
   () => {
 
-    const screen =
-      document.querySelector(
-        "#loadingScreen"
-      );
+    renderer.domElement
+      .requestPointerLock();
 
-    screen.style.opacity = 0;
 
-    setTimeout(
-      () => {
+    startScreen.style.display =
+      "none";
 
-        screen.style.display =
-          "none";
-
-        document
-          .querySelector(
-            "#startScreen"
-          )
-          .style.display =
-          "flex";
-
-      },
-      800
-    );
-
-  },
-  500
+  }
 );
 
 
@@ -191,55 +194,19 @@ setTimeout(
    POINTER LOCK
 ===================================================== */
 
-const startScreen =
-  document.querySelector(
-    "#startScreen"
-  );
-
-document
-  .querySelector(
-    "#startButton"
-  )
-  .addEventListener(
-    "click",
-    () => {
-
-      renderer.domElement
-        .requestPointerLock();
-
-    }
-  );
-
-renderer.domElement
-  .addEventListener(
-    "click",
-    () => {
-
-      if (
-        document.pointerLockElement !==
-        renderer.domElement
-      ) {
-
-        renderer.domElement
-          .requestPointerLock();
-
-      }
-
-    }
-  );
-
 document.addEventListener(
   "pointerlockchange",
   () => {
 
-    startScreen.style.display =
-
-      document.pointerLockElement ===
+    if (
+      document.pointerLockElement !==
       renderer.domElement
+    ) {
 
-      ? "none"
+      startScreen.style.display =
+        "flex";
 
-      : "flex";
+    }
 
   }
 );
@@ -249,104 +216,131 @@ document.addEventListener(
    AREA SYSTEM
 ===================================================== */
 
-const zoneName =
-  document.querySelector(
-    "#zoneName"
-  );
+let currentArea =
+  "";
 
-const areaPopup =
-  document.querySelector(
-    "#areaPopup"
-  );
-
-const areaPopupName =
-  document.querySelector(
-    "#areaPopupName"
-  );
-
-let currentArea = "";
-
-let popupTimer = null;
 
 function detectArea() {
 
   const x =
     camera.position.x;
 
+
   const z =
     camera.position.z;
 
-  let found =
-    "武林街区";
-
-  let foundID =
-    "city";
 
   for (
-    const area of AREAS
+    const area of
+    AREAS
   ) {
 
     if (
-      x >= area.x1 &&
-      x <= area.x2 &&
-      z >= area.z1 &&
-      z <= area.z2
+
+      x >= area.minX &&
+      x <= area.maxX &&
+
+      z >= area.minZ &&
+      z <= area.maxZ
+
     ) {
 
-      found =
-        area.name;
+      if (
+        currentArea !==
+        area.name
+      ) {
 
-      foundID =
-        area.id;
+        currentArea =
+          area.name;
 
-      break;
+
+        const zone =
+          document.getElementById(
+            "zoneName"
+          );
+
+
+        if (zone) {
+
+          zone.textContent =
+            area.name;
+
+        }
+
+
+        showAreaPopup(
+          area.name
+        );
+
+      }
+
+
+      return;
 
     }
 
   }
 
-  zoneName.textContent =
-    found;
-
-  if (
-    foundID !== currentArea
-  ) {
-
-    currentArea =
-      foundID;
-
-    showAreaPopup(
-      found
-    );
-
-  }
-
 }
+
+
+/* =====================================================
+   AREA POPUP
+===================================================== */
+
+let popupTimer;
+
 
 function showAreaPopup(
   name
 ) {
 
-  areaPopupName.textContent =
+  const popup =
+    document.getElementById(
+      "areaPopup"
+    );
+
+
+  const label =
+    document.getElementById(
+      "areaPopupName"
+    );
+
+
+  if (
+    !popup ||
+    !label
+  ) {
+
+    return;
+
+  }
+
+
+  label.textContent =
     name;
 
-  areaPopup.classList.add(
-    "visible"
+
+  popup.classList.add(
+    "show"
   );
+
 
   clearTimeout(
     popupTimer
   );
 
+
   popupTimer =
     setTimeout(
       () => {
 
-        areaPopup.classList.remove(
-          "visible"
+        popup.classList.remove(
+          "show"
         );
 
       },
+
       2200
     );
 
@@ -362,58 +356,36 @@ const qualityButtons =
     "[data-quality]"
   );
 
-function setQuality(
-  qualityName
-) {
-
-  const q =
-    CONFIG.quality[
-      qualityName
-    ];
-
-  renderer.setPixelRatio(
-
-    Math.min(
-      devicePixelRatio,
-      q.pixelRatio
-    )
-
-  );
-
-  renderer.shadowMap.enabled =
-    q.shadows;
-
-  scene.fog.density =
-    q.fogDensity;
-
-  qualityButtons.forEach(
-    button => {
-
-      button.classList.toggle(
-
-        "active",
-
-        button.dataset.quality ===
-        qualityName
-
-      );
-
-    }
-  );
-
-}
 
 qualityButtons.forEach(
   button => {
 
     button.addEventListener(
       "click",
-      event => {
+      () => {
 
-        event.stopPropagation();
+        const quality =
+          button.dataset.quality;
 
-        setQuality(
-          button.dataset.quality
+
+        qualityButtons.forEach(
+          item => {
+
+            item.classList.remove(
+              "active"
+            );
+
+          }
+        );
+
+
+        button.classList.add(
+          "active"
+        );
+
+
+        applyQuality(
+          quality
         );
 
       }
@@ -423,17 +395,111 @@ qualityButtons.forEach(
 );
 
 
+function applyQuality(
+  quality
+) {
+
+  const settings =
+    CONFIG.quality[
+      quality
+    ];
+
+
+  renderer.setPixelRatio(
+
+    Math.min(
+
+      window.devicePixelRatio,
+
+      settings.pixelRatio
+
+    )
+
+  );
+
+
+  renderer.shadowMap.enabled =
+    settings.shadows;
+
+
+  scene.fog.density =
+    settings.fogDensity;
+
+
+  post.setQuality(
+    quality
+  );
+
+
+  post.resize();
+
+}
+
+
 /* =====================================================
    FPS
 ===================================================== */
 
-const fpsElement =
-  document.querySelector(
-    "#fps"
-  );
+let fpsFrames =
+  0;
 
-let fpsFrames = 0;
-let fpsTime = 0;
+let fpsTime =
+  performance.now();
+
+
+function updateFPS() {
+
+  fpsFrames++;
+
+
+  const now =
+    performance.now();
+
+
+  const elapsed =
+    now -
+    fpsTime;
+
+
+  if (
+    elapsed >=
+    500
+  ) {
+
+    const fps =
+      Math.round(
+
+        fpsFrames *
+        1000 /
+        elapsed
+
+      );
+
+
+    const element =
+      document.getElementById(
+        "fps"
+      );
+
+
+    if (element) {
+
+      element.textContent =
+        `FPS ${fps}`;
+
+    }
+
+
+    fpsFrames =
+      0;
+
+
+    fpsTime =
+      now;
+
+  }
+
+}
 
 
 /* =====================================================
@@ -445,27 +511,106 @@ window.addEventListener(
   () => {
 
     camera.aspect =
-      innerWidth /
-      innerHeight;
 
-    camera
-      .updateProjectionMatrix();
+      window.innerWidth /
+      window.innerHeight;
+
+
+    camera.updateProjectionMatrix();
+
 
     renderer.setSize(
-      innerWidth,
-      innerHeight
+      window.innerWidth,
+      window.innerHeight
     );
+
+
+    post.resize();
 
   }
 );
 
 
 /* =====================================================
-   LOOP
+   ERROR
+===================================================== */
+
+window.addEventListener(
+  "error",
+  event => {
+
+    console.error(
+      event.error ||
+      event.message
+    );
+
+  }
+);
+
+
+function showError() {
+
+  const loading =
+    document.getElementById(
+      "loadingScreen"
+    );
+
+
+  const error =
+    document.getElementById(
+      "errorScreen"
+    );
+
+
+  if (loading) {
+
+    loading.style.display =
+      "none";
+
+  }
+
+
+  if (error) {
+
+    error.style.display =
+      "flex";
+
+  }
+
+}
+
+
+/* =====================================================
+   LOADING
+===================================================== */
+
+function setLoading(
+  value
+) {
+
+  const element =
+    document.getElementById(
+      "loadingPercent"
+    );
+
+
+  if (element) {
+
+    element.textContent =
+      `${value}%`;
+
+  }
+
+}
+
+
+/* =====================================================
+   GAME LOOP
 ===================================================== */
 
 const clock =
   new THREE.Clock();
+
 
 function animate() {
 
@@ -473,50 +618,56 @@ function animate() {
     animate
   );
 
+
   const delta =
     Math.min(
       clock.getDelta(),
-      .05
+      0.05
     );
+
 
   const time =
     clock.elapsedTime;
 
-  player.update(
-    delta
-  );
 
-  updateWorld(
-    delta,
-    time,
-    camera
-  );
+  if (player) {
 
-  detectArea();
-
-  fpsFrames++;
-  fpsTime += delta;
-
-  if (
-    fpsTime >= .5
-  ) {
-
-    fpsElement.textContent =
-      Math.round(
-        fpsFrames /
-        fpsTime
-      );
-
-    fpsFrames = 0;
-    fpsTime = 0;
+    player.update(
+      delta
+    );
 
   }
 
-  renderer.render(
-    scene,
-    camera
-  );
+
+  if (world) {
+
+    updateWorld(
+      delta,
+      time,
+      camera
+    );
+
+  }
+
+
+  detectArea();
+
+  updateFPS();
+
+
+  /*
+    IMPORTANT
+
+    Do not call renderer.render()
+    anymore.
+
+    EffectComposer now renders
+    the scene.
+  */
+
+  post.composer.render();
 
 }
+
 
 animate();
