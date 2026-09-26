@@ -30,7 +30,7 @@ export function createPostProcessing(
 
 
   /*
-    Base scene
+    BASE
   */
 
   const renderPass =
@@ -46,7 +46,10 @@ export function createPostProcessing(
 
 
   /*
-    Neon bloom
+    BLOOM
+
+    thresholdを高めにして、
+    暗い物体まで光らないようにする。
   */
 
   const bloomPass =
@@ -57,13 +60,23 @@ export function createPostProcessing(
         window.innerHeight
       ),
 
-      0.62,
-
-      0.55,
-
-      0.72
+      0.72,
+      0.52,
+      0.64
 
     );
+
+
+  bloomPass.threshold =
+    0.62;
+
+
+  bloomPass.strength =
+    0.72;
+
+
+  bloomPass.radius =
+    0.52;
 
 
   composer.addPass(
@@ -72,7 +85,7 @@ export function createPostProcessing(
 
 
   /*
-    Final output
+    OUTPUT
   */
 
   const outputPass =
@@ -91,12 +104,6 @@ export function createPostProcessing(
       window.innerHeight
     );
 
-
-    bloomPass.setSize(
-      window.innerWidth,
-      window.innerHeight
-    );
-
   }
 
 
@@ -109,11 +116,13 @@ export function createPostProcessing(
     ) {
 
       bloomPass.strength =
-        0.25;
-
+        0.35;
 
       bloomPass.radius =
-        0.3;
+        0.32;
+
+      bloomPass.threshold =
+        0.7;
 
     }
 
@@ -123,11 +132,13 @@ export function createPostProcessing(
     ) {
 
       bloomPass.strength =
-        0.82;
-
+        0.9;
 
       bloomPass.radius =
         0.62;
+
+      bloomPass.threshold =
+        0.55;
 
     }
 
@@ -135,11 +146,13 @@ export function createPostProcessing(
     else {
 
       bloomPass.strength =
-        0.62;
-
+        0.72;
 
       bloomPass.radius =
-        0.5;
+        0.52;
+
+      bloomPass.threshold =
+        0.62;
 
     }
 
