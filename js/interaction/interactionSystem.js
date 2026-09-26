@@ -1,447 +1,255 @@
-import {
-  DIALOGUES
-} from "./dialogueData.js";
+export function createInteractionSystem(
+  player,
+  npcs,
+  dialogueSystem
+) {
+
+  let interactionPressed =
+    false;
 
 
-export function createDialogueSystem() {
-
-  let activeNPC =
-    null;
-
-
-  let currentNode =
-    null;
+  let prompt =
+    document.getElementById(
+      "interaction"
+    );
 
 
   /*
-    Overlay
+    index.htmlに無くても
+    自動生成する。
   */
 
-  const overlay =
-    document.createElement(
-      "div"
-    );
+  if (!prompt) {
 
+    prompt =
+      document.createElement(
+        "div"
+      );
 
-  overlay.style.position =
-    "fixed";
 
-  overlay.style.left =
-    "0";
+    prompt.id =
+      "interaction";
 
-  overlay.style.right =
-    "0";
 
-  overlay.style.bottom =
-    "0";
+    Object.assign(
+      prompt.style,
+      {
 
-  overlay.style.padding =
-    "0 20px 28px";
+        position:
+          "fixed",
 
-  overlay.style.display =
-    "none";
+        left:
+          "50%",
 
-  overlay.style.zIndex =
-    "1000";
+        bottom:
+          "110px",
 
-  overlay.style.pointerEvents =
-    "none";
+        transform:
+          "translateX(-50%)",
 
+        padding:
+          "10px 16px",
 
-  document.body.appendChild(
-    overlay
-  );
+        borderRadius:
+          "7px",
 
+        background:
+          "rgba(5,8,12,.86)",
 
-  /*
-    Dialogue panel
-  */
+        border:
+          "1px solid rgba(255,255,255,.18)",
 
-  const panel =
-    document.createElement(
-      "div"
-    );
+        color:
+          "#fff",
 
+        fontSize:
+          "14px",
 
-  panel.style.maxWidth =
-    "820px";
+        zIndex:
+          "5000",
 
-  panel.style.margin =
-    "0 auto";
+        display:
+          "none",
 
-  panel.style.padding =
-    "22px 24px";
-
-  panel.style.background =
-    "rgba(8, 12, 18, 0.93)";
-
-  panel.style.border =
-    "1px solid rgba(255,255,255,0.18)";
-
-  panel.style.borderRadius =
-    "12px";
-
-  panel.style.boxShadow =
-    "0 15px 50px rgba(0,0,0,0.55)";
-
-  panel.style.backdropFilter =
-    "blur(10px)";
-
-
-  overlay.appendChild(
-    panel
-  );
-
-
-  const name =
-    document.createElement(
-      "div"
-    );
-
-
-  name.style.fontSize =
-    "20px";
-
-  name.style.fontWeight =
-    "700";
-
-  name.style.color =
-    "#ffd66b";
-
-
-  panel.appendChild(
-    name
-  );
-
-
-  const role =
-    document.createElement(
-      "div"
-    );
-
-
-  role.style.fontSize =
-    "12px";
-
-  role.style.marginTop =
-    "3px";
-
-  role.style.opacity =
-    "0.58";
-
-
-  panel.appendChild(
-    role
-  );
-
-
-  const text =
-    document.createElement(
-      "div"
-    );
-
-
-  text.style.fontSize =
-    "17px";
-
-  text.style.lineHeight =
-    "1.8";
-
-  text.style.marginTop =
-    "14px";
-
-  text.style.color =
-    "#f5f5f5";
-
-
-  panel.appendChild(
-    text
-  );
-
-
-  const choices =
-    document.createElement(
-      "div"
-    );
-
-
-  choices.style.marginTop =
-    "18px";
-
-  choices.style.display =
-    "flex";
-
-  choices.style.flexDirection =
-    "column";
-
-  choices.style.gap =
-    "8px";
-
-
-  panel.appendChild(
-    choices
-  );
-
-
-  /* =====================================================
-     START
-  ===================================================== */
-
-  function start(
-    npc
-  ) {
-
-    const dialogue =
-      DIALOGUES[
-        npc.id
-      ];
-
-
-    if (
-      !dialogue
-    ) {
-
-      return;
-
-    }
-
-
-    activeNPC =
-      npc;
-
-
-    currentNode =
-      "start";
-
-
-    /*
-      Pointer lock must be released
-      so choices can be clicked.
-  */
-
-    if (
-      document.pointerLockElement
-    ) {
-
-      document.exitPointerLock();
-
-    }
-
-
-    overlay.style.display =
-      "block";
-
-
-    overlay.style.pointerEvents =
-      "auto";
-
-
-    render();
-
-  }
-
-
-  /* =====================================================
-     RENDER
-  ===================================================== */
-
-  function render() {
-
-    if (
-      !activeNPC
-    ) {
-
-      return;
-
-    }
-
-
-    if (
-      currentNode ===
-      "end"
-    ) {
-
-      close();
-
-      return;
-
-    }
-
-
-    const dialogue =
-      DIALOGUES[
-        activeNPC.id
-      ];
-
-
-    const node =
-      dialogue[
-        currentNode
-      ];
-
-
-    if (
-      !node
-    ) {
-
-      close();
-
-      return;
-
-    }
-
-
-    name.textContent =
-      node.speaker ||
-      activeNPC.name;
-
-
-    role.textContent =
-      node.role ||
-      activeNPC.role ||
-      "";
-
-
-    text.textContent =
-      node.text;
-
-
-    choices.innerHTML =
-      "";
-
-
-    const nodeChoices =
-      node.choices ||
-      [];
-
-
-    nodeChoices.forEach(
-      (
-        choice,
-        index
-      ) => {
-
-        const button =
-          document.createElement(
-            "button"
-          );
-
-
-        button.textContent =
-          `${index + 1}. ${choice.text}`;
-
-
-        button.style.padding =
-          "11px 14px";
-
-        button.style.background =
-          "rgba(255,255,255,0.07)";
-
-        button.style.border =
-          "1px solid rgba(255,255,255,0.12)";
-
-        button.style.borderRadius =
-          "7px";
-
-        button.style.color =
-          "#ffffff";
-
-        button.style.fontSize =
-          "15px";
-
-        button.style.textAlign =
-          "left";
-
-        button.style.cursor =
-          "pointer";
-
-
-        button.addEventListener(
-          "mouseenter",
-          () => {
-
-            button.style.background =
-              "rgba(255,214,107,0.18)";
-
-          }
-        );
-
-
-        button.addEventListener(
-          "mouseleave",
-          () => {
-
-            button.style.background =
-              "rgba(255,255,255,0.07)";
-
-          }
-        );
-
-
-        button.addEventListener(
-          "click",
-          () => {
-
-            currentNode =
-              choice.next;
-
-
-            render();
-
-          }
-        );
-
-
-        choices.appendChild(
-          button
-        );
+        pointerEvents:
+          "none"
 
       }
     );
 
-  }
 
-
-  /* =====================================================
-     CLOSE
-  ===================================================== */
-
-  function close() {
-
-    overlay.style.display =
-      "none";
-
-
-    overlay.style.pointerEvents =
-      "none";
-
-
-    activeNPC =
-      null;
-
-
-    currentNode =
-      null;
+    document.body.appendChild(
+      prompt
+    );
 
   }
 
 
-  function isOpen() {
+  window.addEventListener(
+    "keydown",
+    event => {
 
-    return activeNPC !==
+      if (
+        event.code ===
+        "KeyE" &&
+        !event.repeat
+      ) {
+
+        interactionPressed =
+          true;
+
+      }
+
+    }
+  );
+
+
+  function update(
+    delta,
+    time
+  ) {
+
+    if (
+      dialogueSystem.isOpen()
+    ) {
+
+      prompt.style.display =
+        "none";
+
+
+      interactionPressed =
+        false;
+
+
+      return;
+
+    }
+
+
+    const playerPosition =
+      player.getPosition();
+
+
+    let nearest =
       null;
+
+
+    let nearestDistance =
+      Infinity;
+
+
+    for (
+      const npc of npcs
+    ) {
+
+      const dx =
+        npc.root.position.x -
+        playerPosition.x;
+
+
+      const dz =
+        npc.root.position.z -
+        playerPosition.z;
+
+
+      const distance =
+        Math.hypot(
+          dx,
+          dz
+        );
+
+
+      npc.marker.position.y =
+
+        2.3 +
+
+        Math.sin(
+          time * 3 +
+          npc.root.position.x
+        ) *
+
+        0.08;
+
+
+      npc.marker.rotation.y +=
+        delta * 1.5;
+
+
+      if (
+        distance <
+        nearestDistance
+      ) {
+
+        nearestDistance =
+          distance;
+
+
+        nearest =
+          npc;
+
+      }
+
+    }
+
+
+    if (
+      nearest &&
+      nearestDistance <= 2.5
+    ) {
+
+      prompt.style.display =
+        "block";
+
+
+      prompt.innerHTML =
+        `<strong>E</strong>　${nearest.name}と話す`;
+
+
+      const dx =
+        playerPosition.x -
+        nearest.root.position.x;
+
+
+      const dz =
+        playerPosition.z -
+        nearest.root.position.z;
+
+
+      nearest.root.rotation.y =
+        Math.atan2(
+          dx,
+          dz
+        );
+
+
+      if (
+        interactionPressed
+      ) {
+
+        dialogueSystem.start(
+          nearest
+        );
+
+      }
+
+    }
+
+    else {
+
+      prompt.style.display =
+        "none";
+
+    }
+
+
+    interactionPressed =
+      false;
 
   }
 
 
   return {
-
-    start,
-
-    close,
-
-    isOpen
-
+    update
   };
 
 }
