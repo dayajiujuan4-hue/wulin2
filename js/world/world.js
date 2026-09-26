@@ -15,7 +15,8 @@ import {
 } from "./stalls.js";
 
 import {
-  createNeon
+  createNeon,
+  updateNeon
 } from "./neon.js";
 
 import {
@@ -49,20 +50,31 @@ import {
   createWetRoad
 } from "../effects/wetRoad.js";
 
+import {
+  createCityscape
+} from "./cityscape.js";
 
-let animatedObjects = [];
+import {
+  createStreetDetails
+} from "./streetDetails.js";
+
+import {
+  createFacadeSystem
+} from "../buildings/facadeSystem.js";
+
+import {
+  createCityLights,
+  updateCityLights
+} from "../effects/cityLights.js";
+
+
+let neonObjects = [];
 
 let crowdSystem = null;
 
 let vendorSystem = null;
 
-
-/*
-  Objects that can physically
-  support the player.
-*/
-
-const walkableObjects = [];
+let cityLightSystem = null;
 
 
 /* =====================================================
@@ -77,25 +89,27 @@ export function createWorld(
 
   const floorZones = [];
 
+  const walkableObjects = [];
+
+
+  /*
+    Global lighting
+  */
 
   createLighting(
     scene
   );
 
 
+  /*
+    Ground
+  */
+
   const ground =
     createGround(
       scene
     );
 
-
-  /*
-    If ground.js returns a mesh,
-    automatically register it.
-
-    Old ground.js versions that
-    return nothing still work.
-  */
 
   if (ground) {
 
@@ -109,7 +123,9 @@ export function createWorld(
 
     }
 
-    else {
+    else if (
+      ground.isObject3D
+    ) {
 
       walkableObjects.push(
         ground
@@ -120,16 +136,28 @@ export function createWorld(
   }
 
 
+  /*
+    Roads / districts
+  */
+
   createDistricts(
     scene
   );
 
+
+  /*
+    Existing background buildings
+  */
 
   createBuildings(
     scene,
     colliders
   );
 
+
+  /*
+    Enterable buildings
+  */
 
   createBuildingSystem(
     scene,
@@ -138,32 +166,98 @@ export function createWorld(
   );
 
 
+  /*
+    NEW:
+    richer shopfront architecture
+  */
+
+  createFacadeSystem(
+    scene,
+    colliders
+  );
+
+
+  /*
+    NEW:
+    Hangzhou skyline
+  */
+
+  createCityscape(
+    scene
+  );
+
+
+  /*
+    Market stalls
+  */
+
   createStalls(
     scene,
     colliders
   );
 
 
-  animatedObjects =
+  /*
+    Neon
+  */
+
+  neonObjects =
     createNeon(
       scene
-    );
+    ) || [];
 
+
+  /*
+    Existing props
+  */
 
   createProps(
     scene
   );
 
 
+  /*
+    NEW:
+    street-level details
+  */
+
+  createStreetDetails(
+    scene
+  );
+
+
+  /*
+    Wet streets
+  */
+
   createWetRoad(
     scene
   );
 
 
+  /*
+    NEW:
+    distant windows and city lights
+  */
+
+  cityLightSystem =
+    createCityLights(
+      scene
+    );
+
+
+  /*
+    Atmosphere
+  */
+
   createAtmosphere(
     scene
   );
 
+
+  /*
+    NPCs
+  */
 
   crowdSystem =
     createCrowd(
@@ -178,14 +272,7 @@ export function createWorld(
 
 
   /*
-    Find explicitly marked
-    walkable meshes.
-
-    This lets future buildings
-    opt into Raycaster movement
-    simply with:
-
-    mesh.userData.walkable = true;
+    Collect future Raycaster floors
   */
 
   scene.traverse(
@@ -236,28 +323,36 @@ export function updateWorld(
   );
 
 
-  for (
-    const object of
-    animatedObjects
+  /*
+    Existing neon animation
+  */
+
+  if (
+    typeof updateNeon ===
+    "function"
   ) {
 
-    object.material.emissiveIntensity =
-
-      object.userData.base +
-
-      Math.sin(
-
-        time *
-        object.userData.speed +
-
-        object.userData.phase
-
-      ) *
-
-      0.25;
+    updateNeon(
+      neonObjects,
+      time
+    );
 
   }
 
+
+  /*
+    City window animation
+  */
+
+  updateCityLights(
+    cityLightSystem,
+    time
+  );
+
+
+  /*
+    NPCs
+  */
 
   if (
     crowdSystem
