@@ -5,34 +5,29 @@ export function createLighting(
   scene
 ) {
 
-  /* =====================================================
-     NIGHT AMBIENT LIGHT
-
-     夜空は暗いが、
-     人や建物はちゃんと見える。
-  ===================================================== */
+  /*
+    Blue night ambience
+  */
 
   const hemisphere =
     new THREE.HemisphereLight(
-      0x8ba7d5,
-      0x2b1d1b,
-      2.15
+      0x91aee2,
+      0x34211d,
+      2.35
     );
 
 
-  scene.add(
-    hemisphere
-  );
+  scene.add(hemisphere);
 
 
-  /* =====================================================
-     MOON / CITY LIGHT
-  ===================================================== */
+  /*
+    Moon / general city light
+  */
 
   const moon =
     new THREE.DirectionalLight(
-      0xb7cbff,
-      1.75
+      0xc1d3ff,
+      1.8
     );
 
 
@@ -43,7 +38,8 @@ export function createLighting(
   );
 
 
-  moon.castShadow = true;
+  moon.castShadow =
+    true;
 
 
   moon.shadow.mapSize.set(
@@ -65,37 +61,33 @@ export function createLighting(
     -55;
 
 
-  scene.add(
-    moon
-  );
+  scene.add(moon);
 
 
-  /* =====================================================
-     MARKET LIGHTS
+  /*
+    Main market lighting
+  */
 
-     本物のライトは増やしすぎない。
-  ===================================================== */
+  const lightData = [
 
-  const lights = [
+    [0, 4.2, 12, 0xffb866, 7],
+    [0, 4.2, -5, 0xffcb82, 7],
+    [0, 4.2, -22, 0xff9d5a, 7],
+    [0, 4.2, -40, 0xffd18a, 7],
 
-    [0, 4.2, 12, 0xffb45d],
-    [0, 4.2, -5, 0xffca75],
-    [0, 4.2, -22, 0xffa95c],
-    [0, 4.2, -40, 0xffce82],
+    [-18, 4, -61, 0xff7057, 7],
+    [-29, 4, -67, 0xffb866, 7],
 
-    [-18, 4, -61, 0xff7755],
-    [-29, 4, -67, 0xffba63],
+    [0, 4.5, -64, 0xffcb8b, 7],
 
-    [0, 4.5, -64, 0xffca88],
+    [19, 4.5, -62, 0xff42ad, 7],
+    [30, 4.5, -66, 0x42aaff, 7],
 
-    [19, 4.5, -62, 0xff3eaa],
-    [30, 4.5, -66, 0x39aaff],
+    [0, 4, -91, 0xffa25d, 6],
+    [0, 4, -108, 0xffd187, 6],
 
-    [0, 4, -91, 0xff9f5b],
-    [0, 4, -108, 0xffce82],
-
-    [27, 4, -14, 0xff7a54],
-    [27, 4, -33, 0x63aaff]
+    [27, 4, -14, 0xff805b, 6],
+    [27, 4, -33, 0x65adff, 6]
 
   ];
 
@@ -105,16 +97,17 @@ export function createLighting(
       x,
       y,
       z,
-      color
+      color,
+      intensity
     ]
-    of lights
+    of lightData
   ) {
 
     const light =
       new THREE.PointLight(
         color,
-        7,
-        16,
+        intensity,
+        17,
         2
       );
 
@@ -126,12 +119,11 @@ export function createLighting(
     );
 
 
-    light.castShadow = false;
+    light.castShadow =
+      false;
 
 
-    scene.add(
-      light
-    );
+    scene.add(light);
 
   }
 
