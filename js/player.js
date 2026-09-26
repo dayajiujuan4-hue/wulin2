@@ -15,15 +15,77 @@ export function createPlayer(
 
   const keys = {};
 
+  /*
+    FPS camera rig
 
-  let yaw = 0;
+    yawObject   = 左右
+    pitchObject = 上下
+  */
 
-  let pitch = 0;
+  const yawObject =
+    new THREE.Object3D();
+
+  const pitchObject =
+    new THREE.Object3D();
+
+
+  yawObject.add(
+    pitchObject
+  );
+
+
+  pitchObject.add(
+    camera
+  );
+
+
+  /*
+    Camera itself stays at local origin.
+  */
+
+  camera.position.set(
+    0,
+    0,
+    0
+  );
+
+
+  yawObject.position.set(
+    0,
+    CONFIG.player.height,
+    22
+  );
 
 
   let currentFloorHeight =
     0;
 
+
+  let headBob =
+    0;
+
+
+  /*
+    Mouse smoothing
+  */
+
+  let targetYaw =
+    0;
+
+  let targetPitch =
+    0;
+
+
+  let currentYaw =
+    0;
+
+  let currentPitch =
+    0;
+
+
+  /*
+    Raycaster
+  */
 
   const raycaster =
     new THREE.Raycaster();
@@ -41,15 +103,8 @@ export function createPlayer(
     );
 
 
-  camera.position.set(
-    0,
-    CONFIG.player.height,
-    22
-  );
-
-
   /* =====================================================
-     INPUT
+     KEYBOARD
   ===================================================== */
 
   window.addEventListener(
@@ -74,6 +129,10 @@ export function createPlayer(
   );
 
 
+  /* =====================================================
+     MOUSE LOOK
+  ===================================================== */
+
   document.addEventListener(
     "mousemove",
     event => {
@@ -88,21 +147,25 @@ export function createPlayer(
       }
 
 
-      yaw -=
+      const sensitivity =
+        0.0022;
+
+
+      targetYaw -=
         event.movementX *
-        0.002;
+        sensitivity;
 
 
-      pitch -=
+      targetPitch -=
         event.movementY *
-        0.002;
+        sensitivity;
 
 
-      pitch =
+      targetPitch =
         THREE.MathUtils.clamp(
-          pitch,
-          -1.45,
-          1.45
+          targetPitch,
+          -1.48,
+          1.48
         );
 
     }
@@ -177,7 +240,7 @@ export function createPlayer(
 
 
   /* =====================================================
-     RAYCAST GROUND
+     RAYCAST FLOOR
   ===================================================== */
 
   function getRaycastFloor(
@@ -196,14 +259,9 @@ export function createPlayer(
 
 
     rayOrigin.set(
-
       x,
-
-      camera.position.y +
-      2,
-
+      yawObject.position.y + 2.5,
       z
-
     );
 
 
@@ -214,7 +272,7 @@ export function createPlayer(
 
 
     raycaster.far =
-      5;
+      6;
 
 
     const hits =
@@ -240,7 +298,7 @@ export function createPlayer(
 
 
   /* =====================================================
-     LEGACY STAIR HEIGHT
+     STAIR FLOOR
   ===================================================== */
 
   function getStairHeight(
@@ -300,20 +358,16 @@ export function createPlayer(
 
 
     return THREE.MathUtils.lerp(
-
       zone.startHeight,
-
       zone.endHeight,
-
       progress
-
     );
 
   }
 
 
   /* =====================================================
-     LEGACY FLOOR ZONES
+     FLOOR ZONES
   ===================================================== */
 
   function getZoneFloor(
@@ -321,7 +375,7 @@ export function createPlayer(
     z
   ) {
 
-    let result =
+    let best =
       null;
 
 
@@ -331,12 +385,10 @@ export function createPlayer(
     ) {
 
       if (
-
         x < zone.minX ||
         x > zone.maxX ||
         z < zone.minZ ||
         z > zone.maxZ
-
       ) {
 
         continue;
@@ -359,34 +411,34 @@ export function createPlayer(
 
 
       if (
-        typeof zone.height ===
+        typeof zone.height !==
         "number"
       ) {
 
-        const difference =
+        continue;
 
-          Math.abs(
+      }
 
-            zone.height -
-            currentFloorHeight
 
-          );
+      const difference =
+        Math.abs(
+          zone.height -
+          currentFloorHeight
+        );
 
+
+      if (
+        difference <
+        0.9
+      ) {
 
         if (
-          difference <
-          0.85
+          best === null ||
+          zone.height > best
         ) {
 
-          if (
-            result === null ||
-            zone.height > result
-          ) {
-
-            result =
-              zone.height;
-
-          }
+          best =
+            zone.height;
 
         }
 
@@ -395,13 +447,13 @@ export function createPlayer(
     }
 
 
-    return result;
+    return best;
 
   }
 
 
   /* =====================================================
-     GROUND RESOLUTION
+     RESOLVE FLOOR
   ===================================================== */
 
   function resolveFloor(
@@ -409,11 +461,7 @@ export function createPlayer(
     z
   ) {
 
-    /*
-      First try actual geometry.
-  */
-
-    const rayHeight =
+    const rayFloor =
       getRaycastFloor(
         x,
         z
@@ -421,19 +469,30 @@ export function createPlayer(
 
 
     if (
-      rayHeight !== null
+      rayFloor !== null
     ) {
 
-      return rayHeight;
+      /*
+        Avoid suddenly snapping to
+        geometry far above/below player.
+      */
+
+      if (
+        Math.abs(
+          rayFloor -
+          currentFloorHeight
+        ) <
+        1.25
+      ) {
+
+        return rayFloor;
+
+      }
 
     }
 
 
-    /*
-      Fall back to existing system.
-  */
-
-    const zoneHeight =
+    const zoneFloor =
       getZoneFloor(
         x,
         z
@@ -441,10 +500,10 @@ export function createPlayer(
 
 
     if (
-      zoneHeight !== null
+      zoneFloor !== null
     ) {
 
-      return zoneHeight;
+      return zoneFloor;
 
     }
 
@@ -462,17 +521,45 @@ export function createPlayer(
     delta
   ) {
 
-    camera.rotation.order =
-      "YXZ";
+    /*
+      Smooth mouse movement
+  */
+
+    const lookSmooth =
+      1 -
+      Math.exp(
+        -22 *
+        delta
+      );
 
 
-    camera.rotation.y =
-      yaw;
+    currentYaw =
+      THREE.MathUtils.lerp(
+        currentYaw,
+        targetYaw,
+        lookSmooth
+      );
 
 
-    camera.rotation.x =
-      pitch;
+    currentPitch =
+      THREE.MathUtils.lerp(
+        currentPitch,
+        targetPitch,
+        lookSmooth
+      );
 
+
+    yawObject.rotation.y =
+      currentYaw;
+
+
+    pitchObject.rotation.x =
+      currentPitch;
+
+
+    /* =================================================
+       INPUT
+    ================================================= */
 
     let inputX = 0;
     let inputZ = 0;
@@ -481,28 +568,36 @@ export function createPlayer(
     if (
       keys["KeyW"]
     ) {
+
       inputZ -= 1;
+
     }
 
 
     if (
       keys["KeyS"]
     ) {
+
       inputZ += 1;
+
     }
 
 
     if (
       keys["KeyA"]
     ) {
+
       inputX -= 1;
+
     }
 
 
     if (
       keys["KeyD"]
     ) {
+
       inputX += 1;
+
     }
 
 
@@ -526,20 +621,32 @@ export function createPlayer(
     }
 
 
+    /* =================================================
+       MOVEMENT
+    ================================================= */
+
     const forwardX =
-      -Math.sin(yaw);
+      -Math.sin(
+        currentYaw
+      );
 
 
     const forwardZ =
-      -Math.cos(yaw);
+      -Math.cos(
+        currentYaw
+      );
 
 
     const rightX =
-      Math.cos(yaw);
+      Math.cos(
+        currentYaw
+      );
 
 
     const rightZ =
-      -Math.sin(yaw);
+      -Math.sin(
+        currentYaw
+      );
 
 
     const moveX =
@@ -580,12 +687,12 @@ export function createPlayer(
 
 
     /*
-      X
+      X collision
   */
 
     const nextX =
 
-      camera.position.x +
+      yawObject.position.x +
 
       moveX *
       distance;
@@ -594,23 +701,23 @@ export function createPlayer(
     if (
       !collides(
         nextX,
-        camera.position.z
+        yawObject.position.z
       )
     ) {
 
-      camera.position.x =
+      yawObject.position.x =
         nextX;
 
     }
 
 
     /*
-      Z
+      Z collision
   */
 
     const nextZ =
 
-      camera.position.z +
+      yawObject.position.z +
 
       moveZ *
       distance;
@@ -618,81 +725,119 @@ export function createPlayer(
 
     if (
       !collides(
-        camera.position.x,
+        yawObject.position.x,
         nextZ
       )
     ) {
 
-      camera.position.z =
+      yawObject.position.z =
         nextZ;
 
     }
 
 
-    /*
-      Ground
-  */
+    /* =================================================
+       FLOOR
+    ================================================= */
 
     const targetFloor =
-
       resolveFloor(
-
-        camera.position.x,
-
-        camera.position.z
-
+        yawObject.position.x,
+        yawObject.position.z
       );
 
 
     currentFloorHeight =
-
       THREE.MathUtils.lerp(
-
         currentFloorHeight,
-
         targetFloor,
-
         Math.min(
           1,
           delta * 18
         )
-
       );
 
 
-    camera.position.y =
+    /* =================================================
+       HEAD BOB
+    ================================================= */
+
+    let targetBob =
+      0;
+
+
+    if (
+      inputLength > 0
+    ) {
+
+      const frequency =
+        running
+          ? 0.017
+          : 0.011;
+
+
+      const amplitude =
+        running
+          ? 0.025
+          : 0.014;
+
+
+      targetBob =
+
+        Math.sin(
+          performance.now() *
+          frequency
+        ) *
+
+        amplitude;
+
+    }
+
+
+    headBob =
+      THREE.MathUtils.lerp(
+        headBob,
+        targetBob,
+        Math.min(
+          1,
+          delta * 12
+        )
+      );
+
+
+    yawObject.position.y =
 
       CONFIG.player.height +
 
       currentFloorHeight;
 
 
-    /*
-      Walking camera
-  */
+    camera.position.y =
+      headBob;
 
-    if (
-      inputLength >
-      0
-    ) {
-
-      const time =
-        performance.now() *
-        0.009;
+  }
 
 
-      camera.position.y +=
+  /* =====================================================
+     POSITION ACCESS
+  ===================================================== */
 
-        Math.sin(time) *
-        0.011;
+  function getPosition() {
 
-    }
+    return yawObject.position;
 
   }
 
 
   return {
-    update
+
+    update,
+
+    object:
+      yawObject,
+
+    getPosition
+
   };
 
 }
